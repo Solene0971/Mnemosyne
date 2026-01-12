@@ -1,0 +1,58 @@
+
+   
+    <a href="/">Retour à l'accueil</a>
+    <hr>
+
+    <h3>1. Base de données</h3>
+    <form id="form-init" action="{{ url_for('synchro.initialisation') }}" method="POST">
+        <button type="submit">Initialiser la BDD</button>
+    </form>
+
+    {% if msg_db %}
+        <p style="color: blue;"><strong>{{ msg_db }}</strong></p>
+    {% endif %}
+
+    <hr>
+
+    <h3>2. Import des données</h3>
+    <form id="form-sync" action="{{ url_for('synchro.synchronisation') }}" method="POST">
+        <button type="submit">Synchroniser les données</button>
+    </form>
+
+    {% if msg_import %}
+        <p style="color: green;"><strong>{{ msg_import }}</strong></p>
+    {% endif %}
+
+    {% if stats %}
+        <ul>
+            <li>Étudiants distincts trouvés : <strong>{{ stats.total_distincts }}</strong></li>
+            <li>Nouveaux étudiants insérés : <strong>{{ stats.nouveaux }}</strong></li>
+            <li>Étudiants déjà connus (ignorés) : <strong>{{ stats.connus }}</strong></li>
+            <li>Nouvelles inscriptions ajoutées : <strong>{{ stats.inscriptions }}</strong></li>
+        </ul>
+    {% endif %}
+
+
+    <script>
+            document.getElementById('form-init').addEventListener('submit', function(event) {
+            // Affiche le pop-up
+            const choix = confirm("ATTENTION : Cette action va SUPPRIMER toutes les données existantes et recréer les tables vides.\n\nÊtes-vous sûr de vouloir continuer ?");
+            
+            // Si l'utilisateur clique sur "Annuler"
+            if (!choix) {
+                event.preventDefault(); // On bloque l'envoi du formulaire
+            }
+            // Sinon, le formulaire part normalement
+            });
+
+            document.getElementById('form-sync').addEventListener('click', function() {
+            
+            // Affiche le pop-up
+            const choix = confirm("Voulez-vous lancer la synchronisation des données depuis les fichiers JSON ?");
+
+            // Si l'utilisateur clique sur "Annuler", on arrête tout ici
+            if (!choix) {
+                event.preventDefault(); 
+            }
+            });
+    </script>

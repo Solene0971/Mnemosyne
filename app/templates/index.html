@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Suivi SAE</title>
+</head>
+<body>
+
+    <h1>Suivi de Cohorte</h1>
+
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('synchro.setup') }}" style="font-size: small; color: grey;">[Admin: Initialiser/Reset DB]</a>
+    </div>
+
+    {% if db_error %}
+        <div class="alert-warning">
+            <strong>⚠️ Base de données non détectée ou incomplète.</strong><br><br>
+            Aucune donnée n'est visualisable pour le moment.<br>
+            Veuillez initialiser l'application via la page d'administration.<br><br>
+            <a href="{{ url_for('synchro.setup') }}" class="btn-setup">Aller à la configuration</a>
+        </div>
+    
+    {% else %}
+
+    <form method="POST">
+        <label>Département :</label>
+        <select name="departement">
+            <option value="TOUS" {% if sel_dept == 'TOUS' %}selected{% endif %}>TOUS</option>
+            {% for d in depts %}
+                <option value="{{ d }}" {% if sel_dept == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Année de début :</label>
+        <select name="annee">
+            {% for a in annees %}
+                <option value="{{ a }}" {% if sel_year == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Rythme :</label>
+        <select name="rythme">
+            <option value="TOUS" {% if sel_rythme == 'TOUS' %}selected{% endif %}>Tous</option>
+            <option value="FI" {% if sel_rythme == 'FI' %}selected{% endif %}>Formation Initiale (FI)</option>
+            <option value="FA" {% if sel_rythme == 'FA' %}selected{% endif %}>Alternance (FA)</option>
+        </select>
+
+        <button type="submit">Rechercher</button>
+    </form>
+
+    <hr>
+
+    {% if results %}
+    
+        <p>{{ results|length }} étudiants trouvés.</p>
+
+        <table border="1" cellpadding="5" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Département</th>
+                    <th>Année Univ</th>
+                    <th>Niveau</th>
+                    <th>Statut</th> <th>Résultat</th>
+                    <th>INE</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in results %}
+                <tr>
+                    <td>{{ row.dept }}</td>
+                    <td>{{ row.annee_univ }}</td>
+                    <td>BUT {{ row.annee_but }}</td>
+                    <td>{{ row.rythme }}</td> <td>{{ row['resultat'] }}</td>
+                    <td>{{ row.ine }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+	
+	{% elif sel_year and not db_error %}
+            <p>Aucun résultat trouvé.</p>
+    {% endif %}
+	{% endif %}
+
+</body>
+</html>
