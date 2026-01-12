@@ -1,14 +1,22 @@
-pour ajouter le code du bouton à une page admin qui sera dans app/templates/ :
+### Ajouter les boutons de synchronisation dans la page Admin finale
 
-ajouter ce code dans le page admin :
+Dans le dossier des templates :
 
-{% include 'includes/_panel_synchro.html' %}
+Ajouter la page `admin.html` avec le code suivant en plus :
+
+```jinja
+{% include 'includes/bouton_includes.html' %}
 {% endblock %}
+```
 
-dans le fichier app/controllers/SynchroController.py :
+Dans `app/controllers/SynchroController.py` :
 
-retirer la première route vers setup qui a la method 'GET'.
+Retirer la première route pointant vers setup. Cette route utilise la méthode GET.
 
-ajouter un controller AdminController.py avec une route qui redirige vers admin.html.
+ajouter cette route :
 
-ainsi le code des bouton de synchro seront utilisables sur la page admin finale.
+```python
+@app.route("/admin")
+def admin():
+    return render_template("admin.html")
+```
