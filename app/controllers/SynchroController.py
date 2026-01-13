@@ -37,7 +37,7 @@ def synchronisation():
 
     # Import des données JSON
     try:
-        stats = service.synchroniser_avec_sco_doc()
+        stats = service.run_synchronisation()
         msg_import = "Données importées depuis les JSON."
     except Exception as e:
         msg_import = f"Erreur Import: {e}"

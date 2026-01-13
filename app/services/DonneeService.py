@@ -43,3 +43,4 @@ class DonneeService:
             ]
         except ValueError:
             return []
+            
