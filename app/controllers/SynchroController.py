@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template
-from app.services.DonneeService import DonneeService
+from app.services.ScoDocService import ScoDocService
 from app.DonneeDAO import DonneeDAO
 
 synchro_bp = Blueprint('synchro', __name__)
@@ -16,7 +16,6 @@ def setup():
 def initialisation():
     """Lance la synchronisation avec les données JSON"""
     dao = DonneeDAO()
-    service = DonneeService()
 
     # Création des tables apparemment fonctionne
     try:
@@ -31,15 +30,14 @@ def initialisation():
 @synchro_bp.route('/setup/sync', methods=['POST'])
 def synchronisation():
     """Lance la synchronisation avec les données JSON"""
-    dao = DonneeDAO()
-    service = DonneeService()
+    service = ScoDocService()
 
     #stats d'import mais ne fonctionnent pas correctement car même les INSERT IGNORÉS sont compté comme des insertions finales
     stats = None
 
     # Import des données JSON
     try:
-        stats = service.run_import_pipeline()
+        stats = service.run_synchronisation()
         msg_import = "Données importées depuis les JSON."
     except Exception as e:
         msg_import = f"Erreur Import: {e}"

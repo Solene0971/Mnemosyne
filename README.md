@@ -1,22 +1,43 @@
-### Ajouter les boutons de synchronisation dans la page Admin finale
+## Pour lancer le code avec linux pour la prmeière fois
 
-Dans le dossier des templates :
+```
+git clone https://github.com/Solene0971/Mnemosyne.git
+cd Mnemosyne/
+python3 main.py
+```
+aller dans la page setup pour initialiser et synchroniser la base de données 
 
-Ajouter la page `admin.html` avec le code suivant en plus :
+### Si vous avez dejà récupéré le projet avant
+Dans le dossier du projet, lancer :
 
-```jinja
-{% include 'includes/bouton_includes.html' %}
-{% endblock %}
+```
+git pull
 ```
 
-Dans `app/controllers/SynchroController.py` :
+pour voir la version 1.0 du code avec API :
 
-Retirer la première route pointant vers setup. Cette route utilise la méthode GET.
-
-ajouter cette route :
-
-```python
-@app.route("/admin")
-def admin():
-    return render_template("admin.html")
 ```
+git checkout v1-api
+```
+
+pour voir la version 2.0 du code avec API :
+
+```
+git checkout v2-api
+```
+
+pour voir la version de base sans API :
+
+```
+git checkout main
+```
+
+Pour voir dans quelle branche du projet vous êtes acuellement :
+```
+git status
+```
+
+
+les fichiers ScoDocAPI.py et services/ScoDocService.py permettent la synchronisation des données provenant de ScoDoc.
+
+l'initialisation de la base de données se fait avec avec le services/DonneeService.py et DonneeDao.py

@@ -14,47 +14,61 @@ class DonneeDAO:
             db.row_factory = sqlite3.Row
         return db
 
-    def check_data_integrity(self):
+    def insert_dict(self, table: str, data: dict, commit=False):
         """
-        Vérifie si la base contient suffisamment de données pour fonctionner.
-        Retourne True si OK, False sinon.
+        Insère un dictionnaire dans la table spécifiée.
+        Exemple: insert_dict('etudiant', {'ine': '12345'})
+        Retourne l'ID de la ligne insérée.
         """
         db = self.get_db()
         cursor = db.cursor()
         
+        columns = ', '.join(data.keys())
+        placeholders = ', '.join(['?'] * len(data))
+        sql = f"INSERT OR IGNORE INTO {table} ({columns}) VALUES ({placeholders})"
+        
         try:
-            # 1. Vérifions les départements
-            cursor.execute("SELECT COUNT(*) FROM departement")
-            nb_depts = cursor.fetchone()[0]
-            
-            # 2. Vérifions les inscriptions (le cœur du système)
-            cursor.execute("SELECT COUNT(*) FROM inscription")
-            nb_inscriptions = cursor.fetchone()[0]
+            cursor.execute(sql, list(data.values()))
+            if commit:
+                db.commit()
+            return cursor.lastrowid
+        except sqlite3.Error as e:
+            print(f"Erreur insertion {table}: {e}")
+            return None
 
-            # On considère que la BDD est valide s'il y a au moins 
-            # 1 département ET 1 inscription
-            return nb_depts > 0 and nb_inscriptions > 0
-            
-        except sqlite3.OperationalError:
-            # Si une table n'existe pas, c'est que la BDD est cassée
-            return False
-
-    def get_all_departements(self):
-        """Récupère la liste des acronymes de département"""
+    def check_data_integrity(self):
+        """Vérifie si la BDD est peuplée"""
         db = self.get_db()
         cursor = db.cursor()
+        try:
+            cursor.execute("SELECT COUNT(*) FROM departement")
+            d = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM inscription")
+            i = cursor.fetchone()[0]
+            return d > 0 and i > 0
+        except: return False
+
+    def init_db(self):
+        """Crée les tables via schema.sql"""
+        db = self.get_db()
+        with current_app.open_resource('schema.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
+
+    # --- MÉTHODES DE LECTURE (POUR LE FRONT) ---
+
+    def get_all_departements(self):
+        cursor = self.get_db().cursor()
         cursor.execute("SELECT acronyme FROM departement WHERE acronyme NOT IN ('FC', 'P_CJ_GEA') ORDER BY acronyme")
         return [row['acronyme'] for row in cursor.fetchall()]
 
     def get_all_annees(self):
-        """Récupère la liste des acronymes de département"""
-        db = self.get_db()
-        cursor = db.cursor()
+        cursor = self.get_db().cursor()
         cursor.execute("SELECT DISTINCT annee_universitaire FROM inscription ORDER BY annee_universitaire")
         return [str(row['annee_universitaire']) for row in cursor.fetchall()]
 
     def search_etudiants(self, annee_debut, dept, rythme):
-        """Recherche dynamique selon les critères"""
+        """Recherche dynamique pour le tableau de bord"""
         db = self.get_db()
         cursor = db.cursor()
 
@@ -91,10 +105,3 @@ class DonneeDAO:
         
         cursor.execute(query, params)
         return cursor.fetchall()
-    
-    def init_db(self):
-        """Exécute le script schema.sql"""
-        db = self.get_db()
-        with current_app.open_resource('schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()

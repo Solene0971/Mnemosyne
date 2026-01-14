@@ -24,12 +24,19 @@
     {% endif %}
 
     {% if stats %}
+    <div style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-top: 20px;">
+        <h4>📊 Bilan de la synchronisation ScoDoc</h4>
         <ul>
-            <li>Étudiants distincts trouvés : <strong>{{ stats.total_distincts }}</strong></li>
-            <li>Nouveaux étudiants insérés : <strong>{{ stats.nouveaux }}</strong></li>
-            <li>Étudiants déjà connus (ignorés) : <strong>{{ stats.connus }}</strong></li>
-            <li>Nouvelles inscriptions ajoutées : <strong>{{ stats.inscriptions }}</strong></li>
+            <li>Départements traités : <strong>{{ stats.departements }}</strong></li>
+            <li>Formations importées : <strong>{{ stats.formations }}</strong></li>
+            <li>Étudiants mis à jour : <strong>{{ stats.etudiants }}</strong></li>
+            <li>Inscriptions (Années) : <strong>{{ stats.inscriptions }}</strong></li>
+            <li>Evaluations (Notes) : <strong>{{ stats.evaluations }}</strong></li>
         </ul>
+        {% if stats.competences is defined %}
+            <p>Compétences importées : <strong>{{ stats.competences }}</strong></p>
+        {% endif %}
+    </div>
     {% endif %}
 
 
