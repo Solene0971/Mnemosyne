@@ -1,5 +1,5 @@
-from app.ScoDocAPI import ScoDocAPI
-from app.DonneeDAO import DonneeDAO
+from app.models.ScoDocAPI import ScoDocAPI
+from app.models.DonneeDAO import DonneeDAO
 from flask import current_app
 import os
 from datetime import datetime
@@ -8,22 +8,25 @@ class ScoDocService:
     def __init__(self):
         self.dao = DonneeDAO()
         # Configuration
-        url = os.environ.get('SCODOC_URL', 'https://scodoc.univ-paris13.fr')
-        # À REMPLACER PAR VOTRE TOKEN OU CONFIGURER DANS LES VARIABLES D'ENVIRONNEMENT
-        token = os.environ.get('SCODOC_API_TOKEN', '') 
-        
-        self.api = ScoDocAPI(url, token)
+        url = os.environ.get('SCODOC_URL', 'https://scodoc.univ-paris13.fr/ScoDoc/api')
+        self.api = ScoDocAPI(url)
 
     def is_database_ready(self):
         return self.dao.check_data_integrity()
     
     # Méthodes pour le Controller (Index)
-    def get_form_dept(self): return self.dao.get_all_departements()
-    def get_form_annees(self): return self.dao.get_all_annees()
-    def get_search_results(self, y, d, r): return self.dao.search_etudiants(y, d, r)
+    def get_form_dept(self): 
+        return self.dao.get_all_departements()
 
+    def get_form_annees(self): 
+        return self.dao.get_all_annees()
+
+    def get_search_results(self, y, d, r): 
+        return self.dao.search_etudiants(y, d, r)
+
+#synchronisation des données de l'API vers la base de données
     def run_synchronisation(self):
-        """Orchestre la synchronisation complète"""
+        """la synchronisation complète"""
         stats = { 'departements': 0, 'formations': 0, 'etudiants': 0, 
                   'inscriptions': 0, 'competences': 0, 'evaluations': 0 }
         
@@ -123,7 +126,7 @@ class ScoDocService:
     def _import_departements(self, cursor, depts_api, stats):
         for d in depts_api:
             cursor.execute("INSERT OR REPLACE INTO departement (id_departement, nom, acronyme) VALUES (?, ?, ?)", 
-                           (d['id'], d['nom'], d.get('acronyme', d['nom'])))
+                           (d['id'], d['dept_name'], d['acronym']))
             if cursor.rowcount > 0: stats['departements'] += 1
 
     def _import_une_formation(self, cursor, fmt, stats):

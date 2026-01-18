@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mnémosyne - Résultats</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        /* --- GLOBAL --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #EBEBEB; /* Gris clair fond */
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background-color: #1F2A44; /* Bleu nuit */
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- CONTENEUR PRINCIPAL --- */
+        .container {
+            width: 100%;
+            max-width: 1100px; /* Un peu plus large pour le tableau */
+            margin: 40px auto;
+            padding: 0 20px;
+            flex: 1;
+        }
+
+        /* --- TITRES DE SECTION --- */
+        .section-title {
+            color: #BCA386; /* Couleur beige/dorée */
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            margin-top: 30px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        /* --- FIL D'ARIANE / NAVIGATION --- */
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            color: #555;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        .nav-link:hover { color: #1F2A44; }
+        .nav-link i { margin-right: 5px; }
+
+        /* --- INFO CRITÈRES --- */
+        .criteria-box {
+            background-color: #fff;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-left: 5px solid #1F2A44;
+        }
+        .criteria-text { font-size: 1rem; color: #444; }
+        .criteria-text strong { color: #1F2A44; }
+        .count-badge {
+            background-color: #BCA386;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* --- TABLEAU --- */
+        .table-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow-x: auto; /* Scroll si trop petit */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: #1F2A44;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #f9f9f9; }
+
+        /* Badges de résultats */
+        .status-adm { color: #27ae60; font-weight: bold; }
+        .status-fail { color: #c0392b; font-weight: bold; }
+
+        /* --- STATISTIQUES (Placeholder layout) --- */
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background-color: white;
+            height: 250px; /* Hauteur fixe pour imiter l'image */
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-style: italic;
+            border: 1px solid #eee;
+        }
+
+
+        .logo-univ { height: 50px; object-fit: contain; }
+        .logo-admin { height: 66px; object-fit: contain; }
+
+        .logo-link {
+            display: block;
+            transition: opacity 0.3s;
+        }
+        .logo-link:hover {
+            opacity: 0.8;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="{{ url_for('index.index') }}" class="logo-link" title="Retour à l'accueil">
+            <img src="{{ url_for('static', filename='img/logo_univ.png') }}" alt="Université Sorbonne Paris Nord" class="logo-univ">
+        </a>
+        
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="logo-link" title="Admin">
+            <img src="{{ url_for('static', filename='img/logo_admin.png') }}" alt="Logo admin" class="logo-admin">
+        </a>
+    </header>
+
+    <div class="container">
+
+        <a href="{{ url_for('index.index') }}" class="nav-link">
+            <i class="bi bi-arrow-left"></i> Faire une nouvelle recherche
+        </a>
+
+        <h2 class="section-title">Détails de la Cohorte</h2>
+
+        <div class="criteria-box">
+            <div class="criteria-text">
+                Département : <strong>{{ sel_dept }}</strong> &nbsp;|&nbsp; 
+                Année : <strong>{{ sel_year }}</strong> &nbsp;|&nbsp; 
+                Rythme : <strong>{{ sel_rythme }}</strong>
+            </div>
+            {% if results %}
+                <span class="count-badge">{{ results|length }} Étudiants</span>
+            {% endif %}
+        </div>
+
+        <div class="table-container">
+            {% if results %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Département</th>
+                        <th>Année Univ</th>
+                        <th>Niveau</th>
+                        <th>Statut</th> 
+                        <th>Résultat</th>
+                        <th>INE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in results %}
+                    <tr>
+                        <td>{{ row.dept }}</td>
+                        <td>{{ row.annee_univ }}</td>
+                        <td>BUT {{ row.annee_but }}</td>
+                        <td>{{ row.rythme }}</td> 
+                        <td>
+                            {% if 'ADM' in row['resultat'] %}
+                                <span class="status-adm">{{ row['resultat'] }}</span>
+                            {% elif 'FAIL' in row['resultat'] or 'AJ' in row['resultat'] %}
+                                <span class="status-fail">{{ row['resultat'] }}</span>
+                            {% else %}
+                                {{ row['resultat'] }}
+                            {% endif %}
+                        </td>
+                        <td>{{ row.ine }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p style="text-align: center; color: #777; padding: 20px;">
+                    Aucun étudiant trouvé pour ces critères.
+                </p>
+            {% endif %}
+        </div>
+
+        <h2 class="section-title">Statistiques</h2>
+        <div class="stats-row">
+            <div class="stat-card">
+                Graphique Réussite (À venir)
+            </div>
+            <div class="stat-card">
+                Répartition des Notes (À venir)
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

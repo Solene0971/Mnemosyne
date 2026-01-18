@@ -14,28 +14,6 @@ class DonneeDAO:
             db.row_factory = sqlite3.Row
         return db
 
-    def insert_dict(self, table: str, data: dict, commit=False):
-        """
-        Insère un dictionnaire dans la table spécifiée.
-        Exemple: insert_dict('etudiant', {'ine': '12345'})
-        Retourne l'ID de la ligne insérée.
-        """
-        db = self.get_db()
-        cursor = db.cursor()
-        
-        columns = ', '.join(data.keys())
-        placeholders = ', '.join(['?'] * len(data))
-        sql = f"INSERT OR IGNORE INTO {table} ({columns}) VALUES ({placeholders})"
-        
-        try:
-            cursor.execute(sql, list(data.values()))
-            if commit:
-                db.commit()
-            return cursor.lastrowid
-        except sqlite3.Error as e:
-            print(f"Erreur insertion {table}: {e}")
-            return None
-
     def check_data_integrity(self):
         """Vérifie si la BDD est peuplée"""
         db = self.get_db()
@@ -48,7 +26,7 @@ class DonneeDAO:
             return d > 0 and i > 0
         except: return False
 
-    def init_db(self):
+    def _init_db(self):
         """Crée les tables via schema.sql"""
         db = self.get_db()
         with current_app.open_resource('schema.sql', mode='r') as f:

@@ -2,13 +2,16 @@ import os
 import json
 import glob
 import re
-from app.DonneeDAO import DonneeDAO
-from app.Etudiant import EtudiantView
+from app.models.DonneeDAO import DonneeDAO
+from app.models.Etudiant import EtudiantView
 from flask import current_app
 
 class DonneeService:
     def __init__(self):
         self.dao = DonneeDAO()
+
+    def creation_db(self):
+        self.dao._init_db()
 
     def is_database_ready(self):
         """Demande au DAO si les données sont cohérentes"""
