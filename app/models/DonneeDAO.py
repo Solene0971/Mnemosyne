@@ -14,6 +14,7 @@ class DonneeDAO:
             db.row_factory = sqlite3.Row
         return db
 
+    #verification simple du peuplement de la base de données
     def check_data_integrity(self):
         """Vérifie si la BDD est peuplée"""
         db = self.get_db()

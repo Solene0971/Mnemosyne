@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template
 from app.services.ScoDocService import ScoDocService
 from app.services.DonneeService import DonneeService
-# On importe le décorateur de sécurité
 from app.tools import reqlogged
 
 # Création du Blueprint
@@ -17,12 +16,13 @@ def admin_dashboard():
 @reqlogged
 def initialisation():
     """Lance l'initialisation de la BDD (Action du formulaire 1)"""
-    dao = DonneeDAO()
+    dao = DonneeService()
     msg_db = None
 
     try:
         dao.creation_db()
         msg_db = "Base de données initialisée avec succès."
+        print("lancement")
     except Exception as e:
         msg_db = f"Erreur lors de l'initialisation : {e}"
 
