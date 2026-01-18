@@ -1,43 +1,24 @@
-## Pour lancer le code avec linux pour la prmeière fois
+## VFINALE du projet
+
+### Ajouter les identifiants ScoDoc
+
+Aller dans le fichier app/models/ScoDocAPI.py
+Lignes 21,21 -> mettre les identifiants et mot de passe vers ScoDoc
+
+### Lancer le projet
 
 ```
 git clone https://github.com/Solene0971/Mnemosyne.git
 cd Mnemosyne/
 python3 main.py
 ```
-aller dans la page setup pour initialiser et synchroniser la base de données 
 
-### Si vous avez dejà récupéré le projet avant
-Dans le dossier du projet, lancer :
+Ouvir http://localhost:8000 sur firefox
 
-```
-git pull
-```
+cliquer sur le bouton 'SUPPRIMER LA MÉMOIRE' pour réinitialiser la bd.
+Puis,
+cliquer sur le bouton 'Import des données' pour insérer les données à partir de ScoDoc.
 
-pour voir la version 1.0 du code avec API :
+Les messages de fonctionnement ou d'erreurs spécifiques sont visibles dans le terminal depuis lequel vous avez lancer `python3 main.py`
 
-```
-git checkout v1-api
-```
-
-pour voir la version 2.0 du code avec API :
-
-```
-git checkout v2-api
-```
-
-pour voir la version de base sans API :
-
-```
-git checkout main
-```
-
-Pour voir dans quelle branche du projet vous êtes acuellement :
-```
-git status
-```
-
-
-les fichiers ScoDocAPI.py et services/ScoDocService.py permettent la synchronisation des données provenant de ScoDoc.
-
-l'initialisation de la base de données se fait avec avec le services/DonneeService.py et DonneeDao.py
+Le site peut afficher l'erreur qui a bloqué l'insertion des données. Si aucune connection à l'API est possible, la liste des données insérés sera à 0, ce qui ait parti du fonctionnement normal.
