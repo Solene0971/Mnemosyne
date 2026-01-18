@@ -13,16 +13,6 @@ class ScoDocService:
 
     def is_database_ready(self):
         return self.dao.check_data_integrity()
-    
-    # Méthodes pour le Controller (Index)
-    def get_form_dept(self): 
-        return self.dao.get_all_departements()
-
-    def get_form_annees(self): 
-        return self.dao.get_all_annees()
-
-    def get_search_results(self, y, d, r): 
-        return self.dao.search_etudiants(y, d, r)
 
 #synchronisation des données de l'API vers la base de données
     def run_synchronisation(self):

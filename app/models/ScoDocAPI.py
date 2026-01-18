@@ -51,7 +51,7 @@ class ScoDocAPI:
             response.raise_for_status()
 
         except Exception as e:
-            err_msg = f"Erreur API {url}: {e}"
+            err_msg = f"Erreur requête API {url}: {e}"
             print(err_msg)
             return None
 
