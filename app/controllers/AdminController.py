@@ -1,16 +1,20 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, redirect, url_for
 from app.services.ScoDocService import ScoDocService
 from app.services.DonneeService import DonneeService
 from app.tools import reqlogged
+from app.services.RegleService import RegleService
 
 # Création du Blueprint
 admin_bp = Blueprint('admin', __name__)
+#Création de l'objet AdminController
+rs = RegleService()
 
 @admin_bp.route('/admin', methods=['GET'])
 @reqlogged
 def admin_dashboard():
     """Affiche la page d'administration"""
-    return render_template('admin.html')
+    r = rs.get_regles()
+    return render_template('admin.html', rules = r)
 
 @admin_bp.route('/admin/init', methods=['POST'])
 @reqlogged
@@ -42,4 +46,43 @@ def synchronisation():
     except Exception as e:
         msg_import = f"Erreur Import : {e}"
     
-    return render_template('admin.html', msg_import=msg_import, stats=stats)
+    r = rs.get_regles()
+    return render_template('admin.html', msg_import=msg_import, stats=stats, rules=r)
+
+@admin_bp.route('/admin/addregle', methods=['POST'])
+@reqlogged
+def ajouteRegle():
+    nom = request.form.get('nom')
+    description = request.form.get('description')
+    condition = request.form.get("condition")
+
+    if nom and description and condition:
+        rs.ajouter_regle(
+            nom,
+            description,
+            condition
+        )
+
+    return redirect(url_for('admin.admin_dashboard'))
+
+
+@admin_bp.route('/admin/delregle', methods=['POST'])
+@reqlogged
+def suppRegle():
+    index = int(request.form.get('index'))
+    rs.supprimer_regle(index)
+    return redirect(url_for('admin.admin_dashboard'))
+
+
+@admin_bp.route('/admin/update_statut', methods=['POST'])
+@reqlogged
+def update_statut():
+
+    index = int(request.form.get("index"))
+
+    # Si la checkbox existe dans le form → True, sinon False
+    statut = "statut" in request.form
+
+    rs.modifier_statut(index, statut)
+
+    return redirect(url_for('admin.admin_dashboard'))

@@ -1,5 +1,5 @@
 import sqlite3
-from flask import g, current_app
+from flask import g, current_app, session
 
 class DonneeDAO:
     def __init__(self):
@@ -86,7 +86,7 @@ class DonneeDAO:
         return cursor.fetchall()
 
 
-    def get_sankey_data(self, annee_debut, dept, rythme):
+    def get_sankey_data(self, annee_debut, dept, rythme, regles):
         """
         Calcule les flux étudiants pour le diagramme de Sankey
         Retourne les comptages par niveau et les transitions entre niveaux
@@ -109,25 +109,59 @@ class DonneeDAO:
             elif rythme == "FA":
                 sql_rythme = " AND f.id_rythme = 2"
 
-        # Récupérer toutes les inscriptions de la cohorte sur 3 ans + année précédente pour les redoublants entrants
-        query = f"""
-        SELECT 
-            e.id_etudiant,
-            e.ine,
-            i.annee_universitaire,
-            f.annee_but,
-            dec.acronyme as resultat,
-            d.acronyme as dept
-        FROM etudiant e
-        JOIN inscription i ON e.id_etudiant = i.id_etudiant
-        JOIN formation f ON i.id_formation = f.id_formation
-        JOIN departement d ON f.id_departement = d.id_departement
-        LEFT JOIN decision dec ON i.id_decision = dec.id_decision
-        WHERE i.annee_universitaire BETWEEN ? AND ?
-        {sql_dept}
-        {sql_rythme}
-        ORDER BY e.id_etudiant, i.annee_universitaire
-        """
+        if regles != "":
+            # Récupérer toutes les inscriptions de la cohorte sur 3 ans + année précédente pour les redoublants entrants
+            query = f"""
+            SELECT DISTINCT
+                e.id_etudiant,
+                e.ine,
+                i.annee_universitaire,
+                f.annee_but,
+                dec.acronyme as resultat,
+                d.acronyme as dept,
+                r.acronyme as rythme,
+                et.acronyme as etat
+            FROM etudiant e
+            JOIN inscription i ON e.id_etudiant = i.id_etudiant
+            JOIN formation f ON i.id_formation = f.id_formation
+            JOIN departement d ON f.id_departement = d.id_departement
+            LEFT JOIN decision dec ON i.id_decision = dec.id_decision
+            
+            -- Jointures de structure (Rythme / Etat)
+            JOIN rythme r ON f.id_rythme = r.id_rythme
+            JOIN etat et ON i.id_etat = et.id_etat
+
+            -- Jointures pour les règles (Notes / Compétences / Parcours)
+            -- J'utilise LEFT JOIN pour ne pas perdre un étudiant s'il n'a pas encore de note
+            LEFT JOIN evaluer ev ON i.id_inscription = ev.id_inscription
+            LEFT JOIN competence c ON ev.id_competence = c.id_competence
+            LEFT JOIN parcours p ON c.id_parcours = p.id_parcours
+
+            WHERE {regles} AND i.annee_universitaire BETWEEN ? AND ?
+            {sql_dept}
+            {sql_rythme}
+            ORDER BY e.id_etudiant, i.annee_universitaire
+            """
+        else :
+            # Récupérer toutes les inscriptions de la cohorte sur 3 ans + année précédente pour les redoublants entrants
+            query = f"""
+            SELECT 
+                e.id_etudiant,
+                e.ine,
+                i.annee_universitaire,
+                f.annee_but,
+                dec.acronyme as resultat,
+                d.acronyme as dept
+            FROM etudiant e
+            JOIN inscription i ON e.id_etudiant = i.id_etudiant
+            JOIN formation f ON i.id_formation = f.id_formation
+            JOIN departement d ON f.id_departement = d.id_departement
+            LEFT JOIN decision dec ON i.id_decision = dec.id_decision
+            WHERE i.annee_universitaire BETWEEN ? AND ?
+            {sql_dept}
+            {sql_rythme}
+            ORDER BY e.id_etudiant, i.annee_universitaire
+            """
         
         annee_int = int(annee_debut)
         all_params = [annee_int - 1, annee_int + 2] + params  # Inclure l'année précédente

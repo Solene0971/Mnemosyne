@@ -913,7 +913,7 @@
         // On utilise JavaScript pour compter car les filtres Jinja2 sont limités
         const allResults = [
             {% for row in results %}
-            { resultat: "{{ row.resultat }}", rythme: "{{ row.rythme }}" }{% if not loop.last %},{% endif %}
+            { resultat: {{ row.resultat|tojson }}, rythme: {{ row.rythme|tojson }} }{% if not loop.last %},{% endif %}
             {% endfor %}
         ];
 

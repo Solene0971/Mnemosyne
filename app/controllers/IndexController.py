@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, url_for
 from app.services.DonneeService import DonneeService
+from app.services.RegleService import RegleService
 import sqlite3
 
 index_bp = Blueprint('index', __name__)
@@ -34,6 +35,7 @@ def cohorte():
     service = DonneeService()
     results = []
     sankey_stats = None
+    rs = RegleService()
     
     # Récupération des données du formulaire
     selected_dept = request.form.get('departement') 
@@ -42,7 +44,12 @@ def cohorte():
 
     try:
         results = service.get_search_results(selected_year, selected_dept, selected_rythme)
-        sankey_stats = service.get_sankey_stats(selected_year, selected_dept, selected_rythme)    
+        
+        # Appliquer les règles actives
+        conditions_regles = rs.finSQL()
+        
+        sankey_stats = service.get_sankey_stats(selected_year, selected_dept, selected_rythme, conditions_regles)
+            
         
     except Exception as e:
         print(f"Erreur recherche : {e}")

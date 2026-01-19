@@ -196,6 +196,78 @@
 
         <h2 class="section-title">Gestion des règles d’analyse</h2>
         <hr class="divider">
+        <table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Condition</th>
+            <th>Statut</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for rule in rules %}
+        <tr id="rule-{{ loop.index0 }}">
+            <td>{{ rule.nom }}</td>
+            <td>{{ rule.description }}</td>
+            <td>{{ rule.condition }}</td>
+            <td>
+                <form action="{{ url_for('admin.update_statut') }}" method="POST">
+                    <input type="hidden" name="index" value="{{ loop.index0 }}">
+
+                    <input 
+                        type="checkbox" 
+                        name="statut" 
+                        value="1"
+                        {% if rule.statut %}checked{% endif %}
+                        onchange="this.form.submit()"
+                    >
+                    <!-- Ici il faut faire attention, quand la case est coché la règle est active et quand elle est décochée la règle est inactive-->
+                </form>
+            </td>
+            <td>
+                <form action="{{ url_for('admin.suppRegle') }}" method="POST">
+                    <input type="hidden" name="index" value="{{ loop.index0 }}">
+                    <button type="submit">Supprimer</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<h3>Ajouter une nouvelle règle</h3>
+
+<form action="{{ url_for('admin.ajouteRegle') }}" method="POST">
+    <div>
+        <label for="nom">Nom de la règle</label><br>
+        <input type="text" id="nom" name="nom" required>
+    </div>
+
+    <br>
+
+    <div>
+        <label for="description">Description</label><br>
+        <textarea id="description" name="description" rows="4" cols="50" required></textarea>
+    </div>
+
+    <br>
+
+    <div>
+    <label for="condition">Condition</label><br>
+<input 
+    type="text" 
+    id="condition" 
+    name="condition" 
+    placeholder="Ex: moyenne > 10" 
+    required
+>
+
+<br><br>
+
+<button type="submit">Ajouter la règle</button>
+</form>
 
     </div>
 
