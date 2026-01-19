@@ -1,4 +1,9 @@
 ## VFINALE du projet
+### Récupérer le projet
+dans le terminal 
+```
+git clone https://github.com/Solene0971/Mnemosyne.git
+```
 
 ### Ajouter les identifiants ScoDoc
 
@@ -8,7 +13,6 @@ Lignes 21,21 -> mettre les identifiants et mot de passe vers ScoDoc
 ### Lancer le projet
 
 ```
-git clone https://github.com/Solene0971/Mnemosyne.git
 cd Mnemosyne/
 python3 main.py
 ```
