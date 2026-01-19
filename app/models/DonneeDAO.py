@@ -46,7 +46,7 @@ class DonneeDAO:
         cursor.execute("SELECT DISTINCT annee_universitaire FROM inscription ORDER BY annee_universitaire")
         return [str(row['annee_universitaire']) for row in cursor.fetchall()]
 
-    def search_etudiants(self, annee_debut, dept, rythme):
+    def search_etudiants(self, annee_debut, dept, rythme,regles):
         """Recherche dynamique pour le tableau de bord"""
         db = self.get_db()
         cursor = db.cursor()
@@ -63,24 +63,56 @@ class DonneeDAO:
                 sql_conditions += " AND f.id_rythme = 1"
             elif rythme == "FA":
                 sql_conditions += " AND f.id_rythme = 2"
+        
+        if regles!="":
+            query = f"""
+            SELECT DISTINCT
+                e.id_etudiant,
+                e.ine,
+                i.annee_universitaire,
+                f.annee_but,
+                dec.acronyme as resultat,
+                d.acronyme as dept,
+                r.acronyme as rythme,
+                et.acronyme as etat
+            FROM etudiant e
+            JOIN inscription i ON e.id_etudiant = i.id_etudiant
+            JOIN formation f ON i.id_formation = f.id_formation
+            JOIN departement d ON f.id_departement = d.id_departement
+            LEFT JOIN decision dec ON i.id_decision = dec.id_decision
+            
+            -- Jointures de structure (Rythme / Etat)
+            JOIN rythme r ON f.id_rythme = r.id_rythme
+            JOIN etat et ON i.id_etat = et.id_etat
 
-        query = f"""
-        SELECT 
-            e.ine,
-            i.annee_universitaire,
-            f.annee_but,
-            dec.acronyme as resultat,
-            d.acronyme as dept,
-            r.acronyme as rythme
-        FROM inscription i
-        JOIN formation f ON i.id_formation = f.id_formation
-        JOIN departement d ON f.id_departement = d.id_departement
-        JOIN etudiant e ON i.id_etudiant = e.id_etudiant
-        JOIN rythme r ON f.id_rythme = r.id_rythme
-        LEFT JOIN decision dec ON i.id_decision = dec.id_decision
-        {sql_conditions}
-        ORDER BY e.ine;
-        """
+            -- Jointures pour les règles (Notes / Compétences / Parcours)
+            -- J'utilise LEFT JOIN pour ne pas perdre un étudiant s'il n'a pas encore de note
+            LEFT JOIN evaluer ev ON i.id_inscription = ev.id_inscription
+            LEFT JOIN competence c ON ev.id_competence = c.id_competence
+            LEFT JOIN parcours p ON c.id_parcours = p.id_parcours
+
+            {sql_conditions} AND {regles}
+            ORDER BY e.ine;
+            """
+
+        else:
+            query = f"""
+            SELECT 
+                e.ine,
+                i.annee_universitaire,
+                f.annee_but,
+                dec.acronyme as resultat,
+                d.acronyme as dept,
+                r.acronyme as rythme
+            FROM inscription i
+            JOIN formation f ON i.id_formation = f.id_formation
+            JOIN departement d ON f.id_departement = d.id_departement
+            JOIN etudiant e ON i.id_etudiant = e.id_etudiant
+            JOIN rythme r ON f.id_rythme = r.id_rythme
+            LEFT JOIN decision dec ON i.id_decision = dec.id_decision
+            {sql_conditions}
+            ORDER BY e.ine;
+            """
         
         cursor.execute(query, params)
         return cursor.fetchall()
