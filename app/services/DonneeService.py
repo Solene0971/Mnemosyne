@@ -46,4 +46,15 @@ class DonneeService:
             ]
         except ValueError:
             return []
-            
+    
+
+    def get_sankey_stats(self, year, dept, rythme):
+        """Retourne les statistiques pour le diagramme de Sankey"""
+        if not year:
+            return None
+        
+        try:
+            return self.dao.get_sankey_data(year, dept, rythme)
+        except Exception as e:
+            print(f"Erreur calcul Sankey : {e}")
+            return None

@@ -33,6 +33,7 @@ def cohorte():
     """Traite le formulaire et affiche le tableau de résultats"""
     service = DonneeService()
     results = []
+    sankey_stats = None
     
     # Récupération des données du formulaire
     selected_dept = request.form.get('departement') 
@@ -41,12 +42,19 @@ def cohorte():
 
     try:
         results = service.get_search_results(selected_year, selected_dept, selected_rythme)
+        sankey_stats = service.get_sankey_stats(selected_year, selected_dept, selected_rythme)    
+        
     except Exception as e:
         print(f"Erreur recherche : {e}")
         results = []
+        sankey_stats = None
 
     return render_template('cohorte.html', 
                            results=results, 
                            sel_dept=selected_dept, 
                            sel_year=selected_year,
-                           sel_rythme=selected_rythme)
+                           sel_rythme=selected_rythme,
+                           selected_year=int(selected_year) if selected_year else 2021,
+                           selected_dept=selected_dept or '',
+                           selected_rythme=selected_rythme or 'TOUS',
+                           sankey_stats=sankey_stats)
