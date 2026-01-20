@@ -29,7 +29,7 @@ def index():
                            annees=annees, 
                            db_error=db_error)
 
-@index_bp.route('/cohorte', methods=['POST'])
+@index_bp.route('/cohorte', methods=['GET', 'POST'])
 def cohorte():
     """Traite le formulaire et affiche le tableau de résultats"""
     service = DonneeService()
@@ -37,11 +37,14 @@ def cohorte():
     sankey_stats = None
     rs = RegleService()
     
-    # Récupération des données du formulaire
-    selected_dept = request.form.get('departement') 
-    selected_year = request.form.get('annee')
-    selected_rythme = request.form.get('rythme')
-
+    if request.method == 'POST':
+        selected_dept = request.form.get('departement') 
+        selected_year = request.form.get('annee')
+        selected_rythme = request.form.get('rythme')
+    else:
+        selected_dept = request.args.get('dept') 
+        selected_year = request.args.get('year')
+        selected_rythme = request.args.get('rythme', 'TOUS')
     try:
         # Appliquer les règles actives
         conditions_regles = rs.finSQL()
