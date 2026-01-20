@@ -25,14 +25,14 @@ class DonneeService:
         """Retourne les options d'années pour le formulaire"""
         return self.dao.get_all_annees()    
 
-    def get_search_results(self, year, dept, rythme,regles):
+    def get_search_results(self, year, dept, rythme, regles):
         """Retourne les objets EtudiantView après recherche"""
         if not year:
             return []
         
         try:
             annee_int = int(year)
-            rows = self.dao.search_etudiants(annee_int, dept, rythme,regles)
+            rows = self.dao.search_etudiants(annee_int, dept, rythme, regles)
             # Transformation des lignes SQL en objets métier
             return [
                 EtudiantView(

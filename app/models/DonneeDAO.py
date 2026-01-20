@@ -46,7 +46,7 @@ class DonneeDAO:
         cursor.execute("SELECT DISTINCT annee_universitaire FROM inscription ORDER BY annee_universitaire")
         return [str(row['annee_universitaire']) for row in cursor.fetchall()]
 
-    def search_etudiants(self, annee_debut, dept, rythme,regles):
+    def search_etudiants(self, annee_debut, dept, rythme, regles):
         """Recherche dynamique pour le tableau de bord"""
         db = self.get_db()
         cursor = db.cursor()

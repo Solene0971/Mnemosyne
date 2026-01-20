@@ -45,7 +45,7 @@ def cohorte():
     try:
         # Appliquer les règles actives
         conditions_regles = rs.finSQL()
-        results = service.get_search_results(selected_year, selected_dept, selected_rythme,conditions_regles)
+        results = service.get_search_results(selected_year, selected_dept, selected_rythme, conditions_regles)
         sankey_stats = service.get_sankey_stats(selected_year, selected_dept, selected_rythme, conditions_regles)
             
         
