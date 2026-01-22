@@ -18,12 +18,20 @@ class ScoDocAPI:
         self.session.headers.update(self.headers)
 
     def _getConfig(self)-> Tuple[str, str]:
+        """
+        Retourne les identifiants pour se connecter à ScoDoc
+        """
         id = ''
         mdp = ''
         return id, mdp
 
     def _recupToken(self) -> str:
+        """
+        Fonction permettant de récupérer un token pour effectuer des requêtes vers l'API
+        Retourne le token OU Lève une exception si la connection vers l'API échoue
+        """
         identifiant, mdp = self._getConfig()
+        #url vers la récupération du token ScoDoc
         auth_url = f"{self.base_url}/tokens"
 
         try:

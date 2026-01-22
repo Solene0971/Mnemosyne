@@ -8,18 +8,10 @@ from datetime import datetime
 class ScoDocService:
     def __init__(self):
         self.dao = DonneeDAO()
-        # Configuration
+        # Configuration de l'url vers ScoDoc
         url = os.environ.get('SCODOC_URL', 'https://scodoc.univ-paris13.fr/ScoDoc/api')
-        token = os.environ.get('SCODOC_API_TOKEN', '') 
-        
+        #Récupération de la connection vers l'API
         self.api = ScoDocAPI(url)
-
-    def is_database_ready(self):
-        return self.dao.check_data_integrity()
-    
-    def get_form_dept(self): return self.dao.get_all_departements()
-    def get_form_annees(self): return self.dao.get_all_annees()
-    def get_search_results(self, y, d, r): return self.dao.search_etudiants(y, d, r)
 
     def run_synchronisation(self):
         """Orchestre la synchronisation complète"""
@@ -30,49 +22,52 @@ class ScoDocService:
         cursor = db.cursor()
 
         try:
-            # 1. Données statiques
+            # 1. Données de bases à insérer manuellement
             self._init_referentiels_statiques(cursor)
 
-            # 2. Départements (Avec ajout manuel des Passerelles)
+            # 2. Insertion des départements (avec les passerelles ici)
             depts = self.api.get_departements()
             self._import_departements(cursor, depts, stats)
 
-            # 3. Formations BUT & Parcours
+            # 3. Formations BUT et Parcours
             all_formations = self.api.get_formations()
             
-            # Map : ID ScoDoc (ex: 305) -> ID Dept BDD (ex: 1)
+            # fait le lien entre les id de formations ScoDoc vers les id de departements dans la bdd
             scodoc_formation_ids = {} 
 
             for fmt in all_formations:
-                # Filtre : On ne traite que les BUT
+                # Filtre : On ne traite que les BUT ou BACHELOR
                 titre = (fmt.get('titre') or fmt.get('titre_officiel') or '').upper()
                 acronyme = (fmt.get('acronym') or '')
+                archived = (fmt.get('archived'))
 
-                if 'BUT' in titre or 'BACH' in acronyme:
-                    # A. Création des 6 formations théoriques (BUT1/2/3 x FI/FA)
-                    dept_id_bdd = self._import_structure_formation(cursor, fmt, stats)
+                if (archived == False) and ('BUT' in titre or 'BACH' in acronyme):
+                    # A. Création des formations théoriques (BUT1/2/3 x FI/FA) pour ce departement /!\ pas de vérification s'il n'y a pas de FA en BUT1
+                    dept_id_bdd = self._import_structure_formation(cursor, fmt, stats) #retourne l'id bdd du departement
                     
                     if dept_id_bdd:
-                        scodoc_id = fmt.get('id')
+                        scodoc_id = fmt.get('id') #l'ID ScoDoc de la formation
+                        #lien entre l'id ScoDoc de la formation et l'id du departement
                         scodoc_formation_ids[scodoc_id] = dept_id_bdd
 
-            # --- AJOUT MANUEL DES FORMATIONS PASSERELLES ---
-            # ID 9 = Passerelle SD INFO / ID 10 = Passerelle CJ GEA
+            # Insertion manuelle des passerelles
             self._create_passerelle_formation(cursor, 9, stats)
             self._create_passerelle_formation(cursor, 10, stats)
 
 
-            # 4. Import des Référentiels (Parcours / Compétences)
-            # Map : (ID Dept BDD, Numéro UE) -> ID Competence BDD
+            # 4. Import parcours et compétences associées
+            #fait le lien entre les id (departement de la bdd, le num de l'UE) vers l'id competence de la bdd
             map_competence_ids = {} 
-            depts_traites = set()
+            depts_traites = set() #permet de vérifier qu'on ne traite pas un department dejà vu (évite des insertions ignorées)
 
+            #insère les compétences associée à la formation et son departement
             for scodoc_id, dept_id_bdd in scodoc_formation_ids.items():
+                #si on a pas encore traité les compétences du departement
                 if dept_id_bdd not in depts_traites:
                     self._import_referentiel_competence(cursor, scodoc_id, dept_id_bdd, map_competence_ids, stats)
                     depts_traites.add(dept_id_bdd)
 
-            # 5. Inscriptions & Evaluations
+            # 5. Insertion des inscriptions et des évaluations
             annee_actuelle = datetime.now().year
             annees_a_traiter = range(2021, annee_actuelle + 2) 
 
@@ -275,7 +270,7 @@ class ScoDocService:
                 if d_id and nom and acro:
                     donnees.append((d_id, nom, acro))
         
-        # --- AJOUT MANUEL DES PASSERELLES ---
+        # Insertion manuelle des passerelles
         donnees.append((9, "Passerelle SD INFO", "P_SD_INFO"))
         donnees.append((10, "Passerelle CJ GEA", "P_CJ_GEA"))
 

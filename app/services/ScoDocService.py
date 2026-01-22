@@ -8,20 +8,11 @@ from datetime import datetime
 class ScoDocService:
     def __init__(self):
         self.dao = DonneeDAO()
-        # Configuration
+        # Configuration de l'url vers ScoDoc
         url = os.environ.get('SCODOC_URL', 'https://scodoc.univ-paris13.fr/ScoDoc/api')
-        # À REMPLACER PAR VOTRE TOKEN
-        token = os.environ.get('SCODOC_API_TOKEN', '') 
-        
+        #Récupération de la connection vers l'API        
         self.api = ScoDocAPI(url)
-
-    def is_database_ready(self):
-        return self.dao.check_data_integrity()
     
-    def get_form_dept(self): return self.dao.get_all_departements()
-    def get_form_annees(self): return self.dao.get_all_annees()
-    def get_search_results(self, y, d, r): return self.dao.search_etudiants(y, d, r)
-
     def run_synchronisation(self):
         """Orchestre la synchronisation complète"""
         stats = { 'departements': 0, 'formations': 0, 'etudiants': 0, 
@@ -31,52 +22,53 @@ class ScoDocService:
         cursor = db.cursor()
 
         try:
-            # 1. Données statiques
+            # 1. Données de bases à insérer manuellement
             self._init_referentiels_statiques(cursor)
 
-            # 2. Départements
+            # 2. Insertion des départements (sans les passerelles ici)
             depts = self.api.get_departements()
             self._import_departements(cursor, depts, stats)
 
-            # 3. Formations BUT & Parcours
+            # 3. Formations BUT et Parcours
             all_formations = self.api.get_formations()
             
-            # Map : ID ScoDoc (305) -> ID Dept BDD
+            # fait le lien entre les id de formations ScoDoc vers les id de departements dans la bdd
             scodoc_formation_ids = {} 
 
             for fmt in all_formations:
-                # Filtre : On ne traite que les BUT
+                # Filtre : On ne traite que les BUT ou BACHELOR
                 titre = (fmt.get('titre') or fmt.get('titre_officiel') or '').upper()
                 acronyme = (fmt.get('acronym') or '')
+                archived = (fmt.get('archived'))
 
-                # Condition plus large grâce à vos fichiers
-                if 'BUT' in titre or 'BACH' in acronyme:
+                if (archived == False) and ('BUT' in titre or 'BACH' in acronyme):
                     
-                    # A. Création des 6 formations théoriques (BUT1/2/3 x FI/FA) pour ce département
-                    dept_id_bdd = self._import_structure_formation(cursor, fmt, stats)
+                    # A. Création des formations théoriques (BUT1/2/3 x FI/FA) pour ce département /!\ pas de vérification s'il n'y a pas de FA en BUT1
+                    dept_id_bdd = self._import_structure_formation(cursor, fmt, stats) #retourne l'id du departement
                     
                     if dept_id_bdd:
-                        scodoc_id = fmt.get('id')
+                        scodoc_id = fmt.get('id') #l'ID ScoDoc de la formation
+                        #lien entre l'id ScoDoc de la formation et l'id bdd du departement
                         scodoc_formation_ids[scodoc_id] = dept_id_bdd
 
-            # 4. Import des Référentiels (Parcours / Compétences)
-            # Map : (ID Dept BDD, Numéro UE) -> ID Competence BDD
+            # 4. Import parcours et compétences associées
+            #fait le lien entre les id (departement de la bdd, le num de l'UE) vers l'id competence de la bdd
             map_competence_ids = {} 
+            depts_traites = set() #permet de vérifier qu'on ne traite pas un department dejà vu (évite des insertions ignorées)
 
-            # On ne le fait qu'une fois par département pour éviter les requêtes inutiles
-            depts_traites = set()
-
+            #insère les compétences associée à la formation et son departement
             for scodoc_id, dept_id_bdd in scodoc_formation_ids.items():
+                #si on a pas encore traité les compétences du departement
                 if dept_id_bdd not in depts_traites:
                     self._import_referentiel_competence(cursor, scodoc_id, dept_id_bdd, map_competence_ids, stats)
                     depts_traites.add(dept_id_bdd)
 
-            # 5. Inscriptions & Evaluations
+            # 5. Insertion des inscriptions et des évaluations
             annee_actuelle = datetime.now().year
             annees_a_traiter = range(2021, annee_actuelle + 2) 
 
-            # Caches
-            cursor.execute("SELECT ine, id_etudiant FROM etudiant") #????
+            # Caches evite les requêtes en boucle
+            cursor.execute("SELECT ine, id_etudiant FROM etudiant")
             cache_etus = {row['ine']: row['id_etudiant'] for row in cursor.fetchall()}
             
             cursor.execute("SELECT acronyme, id_decision FROM decision")
@@ -242,7 +234,7 @@ class ScoDocService:
     def _import_departements(self, cursor, depts_api, stats):
         donnees = []
         for d in depts_api:
-            # Sécurisation avec .get et check 'visible'
+            # Vérifie que le departement est actif
             if d.get('visible') is True:
                 d_id = d.get('id')
                 nom = d.get('dept_name') or d.get('nom') or 'Inconnu'
@@ -258,24 +250,23 @@ class ScoDocService:
         Importe les Parcours et Compétences depuis le référentiel ScoDoc 9.
         Format attendu : Dictionnaires uniquement.
         """
+        #récupère le référentiel de compétences en fonction de l'id de formation scodoc
         ref = self.api.get_referentiel_competences(scodoc_id)
         if not ref or not isinstance(ref, dict): 
             return
 
-        # ---------------------------------------------------------
-        # ÉTAPE 1 : IMPORT DES PARCOURS (Format Dictionnaire)
-        # ---------------------------------------------------------
+        # 1. insertion des parcours
         # Structure attendue : { "DevCloud": { "libelle": "..." }, "B": { ... } }
         dict_parcours = ref.get('parcours')
         
-        # Si pas de parcours ou format incorrect, on arrête tout (consigne stricte)
+        # Si pas de parcours ou format incorrect, on arrête tout
         if not dict_parcours or not isinstance(dict_parcours, dict):
             return
 
-        map_parcours_bdd = {} # Clé: Code Parcours (ex: 'DevCloud') -> Valeur: ID BDD
+        map_parcours_bdd = {} # Clé: Code Parcours (ex: 'DevCloud') et Valeur: ID departement BDD
 
         for p_code, p_data in dict_parcours.items():
-            # Dans un dictionnaire, la clé est souvent le code (A, B, C...)
+            # Dans un dictionnaire, la clé est souvent le code (DevCloud)
             # p_data contient les détails (libelle, etc.)
             
             nom_parcours = p_data.get('libelle')
@@ -294,7 +285,7 @@ class ScoDocService:
                     VALUES (?, ?, ?)
                 """, (p_code, nom_parcours, dept_id_bdd))
                 
-                map_parcours_bdd[p_code] = cursor.lastrowid #récupère l'id insérér end ernier
+                map_parcours_bdd[p_code] = cursor.lastrowid #récupère l'id parcours insérér en dernier liée au parcours
 
         # Sécurité supplémentaire : Si l'insertion a échoué et map vide, on sort.
         if not map_parcours_bdd:
