@@ -278,3 +278,95 @@
             position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
             font-family: 'Playfair Display', serif; font-weight: bold; font-size: 1.6rem; color: #1F2A44;
         }
+
+
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end; /* Aligne le bouton à droite */
+            margin-bottom: 20px;
+            margin-top: -10px; /* Remonte un peu pour s'aligner avec le fil d'ariane */
+        }
+
+        .btn-export {
+            background-color: #1F2A44; /* Bleu nuit comme le header */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px; /* Bords bien arrondis (style moderne) */
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px; /* Espace entre l'icône et le texte */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Ombre douce */
+            transition: all 0.3s ease;
+        }
+
+        .btn-export:hover {
+            background-color: #BCA386; /* Devient doré au survol */
+            transform: translateY(-2px); /* Petit effet de "soulèvement" */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-export:active {
+            transform: translateY(0);
+        }
+
+        .btn-export i {
+            font-size: 1.2rem;
+        }
+@media print {
+    
+    /* 1. CACHER LES ÉLÉMENTS INUTILES */
+    header,                 /* Cache le bandeau bleu avec les logos */
+    .nav-link,             /* Cache "Faire une nouvelle recherche" */
+    .action-buttons,       /* Cache le bouton "Télécharger" lui-même */
+    .btn-export,
+    .logo-univ,
+    .logo-admin {
+        display: none !important;
+    }
+
+    /* 2. NETTOYER LA MISE EN PAGE */
+    body {
+        background-color: white !important; /* Enlève le fond gris du site */
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important; /* Enlève l'ombre portée du cadre principal */
+    }
+
+    /* 3. FORCER LES COULEURS DES GRAPHIQUES */
+    /* Indispensable pour que le Sankey et les jauges ne soient pas blancs */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* 4. GÉRER LES COUPURES DE PAGE */
+    /* Empêche un graphique d'être coupé en deux entre deux pages */
+    .chart-card, 
+    .sankey-container, 
+    .criteria-box {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        border: 1px solid #ddd; /* Ajoute un cadre fin et propre */
+        box-shadow: none !important;
+        margin-bottom: 20px;
+    }
+
+    /* 5. SUPPRIMER LES EN-TÊTES/PIEDS DE PAGE DU NAVIGATEUR (URL, Date...) */
+    @page {
+        margin: 1cm;      /* Marge propre autour du papier */
+        size: auto;       /* Laisse le navigateur gérer la taille */
+    }
+}

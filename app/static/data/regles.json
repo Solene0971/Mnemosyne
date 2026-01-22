@@ -1,8 +1,8 @@
 [
     {
-        "nom": "zerz",
-        "description": "zert",
+        "nom": "fsef",
+        "description": "sdfsdfsdf",
         "condition": "i.moyenne > 10",
-        "statut": true
+        "statut": false
     }
 ]
