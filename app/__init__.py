@@ -3,30 +3,32 @@ from flask import Flask, g
 
 def create_app():
     # Configuration des chemins
-    # BASE_DIR est le dossier 'app'
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    # Le dossier parent contient 'instance'
     INSTANCE_DIR = os.path.join(BASE_DIR, 'instance')
-    # Config BDD
     DB_PATH = os.path.join(INSTANCE_DIR, 'scolarite.db')
     
     app = Flask(__name__, instance_path=INSTANCE_DIR)
     app.config['DATABASE'] = DB_PATH
 
-    # S'assurer que le dossier instance existe
+    # Config Auth
+    app.config["SESSION_COOKIE_SECURE"] = False 
+    app.secret_key = 'votre_cle_secrete_ici' # Changez ceci en prod
+
     try:
-        os.makedirs(os.path.dirname(DB_PATH))
+        os.makedirs(INSTANCE_DIR)
     except OSError:
         pass
 
-    # Enregistrement des Blueprints (Contrôleurs)
+    # --- Enregistrement des Blueprints ---
     from app.controllers.IndexController import index_bp
-    from app.controllers.SynchroController import synchro_bp
+    # On retire SynchroController car il est fusionné dans Admin
+    from app.controllers.LoginController import login_bp
+    from app.controllers.AdminController import admin_bp
     
     app.register_blueprint(index_bp)
-    app.register_blueprint(synchro_bp)
+    app.register_blueprint(login_bp)
+    app.register_blueprint(admin_bp)
 
-    # Gestion fermeture connexion DB
     @app.teardown_appcontext
     def close_connection(exception):
         db = getattr(g, '_database', None)
