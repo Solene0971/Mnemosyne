@@ -1,4 +1,4 @@
-## VFINALE du projet
+## Ce n'est plus la VFINALE du projet, la VFINALE est dans la branche main
 ### Récupérer le projet
 dans le terminal 
 ```
