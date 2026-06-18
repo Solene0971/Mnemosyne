@@ -10,7 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/switchmdp.css') }}">
+    <!-- ===== CSS SEPARE ===== -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/change_mdp.css') }}">
 
 </head>
 <body>
@@ -113,6 +114,118 @@
         </p>
     </div>
 
-<script src="{{ url_for('static', filename='js/switchmdp.js') }}"></script>
+    <!-- ===== JAVASCRIPT ===== -->
+    <script>
+        // --- 1. Afficher / Cacher le mot de passe ---
+        function togglePassword(fieldId, btn) {
+            const input = document.getElementById(fieldId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+
+        // --- 2. Force du mot de passe ---
+        function checkStrength(password) {
+            const bar = document.getElementById('strengthFill');
+            const text = document.getElementById('strengthText');
+            
+            let score = 0;
+            if (password.length >= 8) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+
+            const percent = (score / 5) * 100;
+            bar.style.width = percent + '%';
+
+            let color, label;
+            if (score <= 1) { color = '#e53935'; label = 'Très faible'; }
+            else if (score === 2) { color = '#f9a825'; label = 'Faible'; }
+            else if (score === 3) { color = '#fdd835'; label = 'Moyen'; }
+            else if (score === 4) { color = '#43a047'; label = 'Fort'; }
+            else { color = '#2e7d32'; label = 'Très fort'; }
+
+            bar.style.background = color;
+            text.textContent = label;
+            text.style.color = color;
+
+            // Mettre à jour les critères
+            updateCriteria(password);
+        }
+
+        // --- 3. Mise à jour des critères ---
+        function updateCriteria(password) {
+            const criteria = [
+                { id: 'c-length', valid: password.length >= 8 },
+                { id: 'c-upper', valid: /[A-Z]/.test(password) },
+                { id: 'c-lower', valid: /[a-z]/.test(password) },
+                { id: 'c-digit', valid: /[0-9]/.test(password) },
+                { id: 'c-special', valid: /[^A-Za-z0-9]/.test(password) }
+            ];
+
+            criteria.forEach(c => {
+                const el = document.getElementById(c.id);
+                if (c.valid) {
+                    el.classList.add('valid');
+                    el.querySelector('i').className = 'bi bi-check-circle-fill';
+                } else {
+                    el.classList.remove('valid');
+                    el.querySelector('i').className = 'bi bi-circle';
+                }
+            });
+        }
+
+        // Initialiser les critères au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            const newPwd = document.getElementById('new_password');
+            if (newPwd.value) {
+                checkStrength(newPwd.value);
+            }
+        });
+
+        // --- 4. Validation du formulaire ---
+        function validateForm() {
+            const newPwd = document.getElementById('new_password').value;
+            const confirmPwd = document.getElementById('confirm_password').value;
+            const oldPwd = document.getElementById('old_password').value;
+
+            // Vérifier que l'ancien mot de passe n'est pas vide
+            if (!oldPwd) {
+                alert('Veuillez entrer votre mot de passe actuel.');
+                document.getElementById('old_password').focus();
+                return false;
+            }
+
+            // Vérifier que le nouveau mot de passe fait au moins 8 caractères
+            if (newPwd.length < 8) {
+                alert('Le nouveau mot de passe doit contenir au moins 8 caractères.');
+                document.getElementById('new_password').focus();
+                return false;
+            }
+
+            // Vérifier que les mots de passe correspondent
+            if (newPwd !== confirmPwd) {
+                alert('Les mots de passe ne correspondent pas.');
+                document.getElementById('confirm_password').focus();
+                return false;
+            }
+
+            // Vérifier que le nouveau mot de passe est différent de l'ancien
+            if (newPwd === oldPwd) {
+                alert('Le nouveau mot de passe doit être différent de l\'ancien.');
+                document.getElementById('new_password').focus();
+                return false;
+            }
+
+            return true;
+        }
+    </script>
+
 </body>
 </html>
