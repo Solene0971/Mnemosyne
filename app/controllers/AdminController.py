@@ -59,14 +59,15 @@ def synchronisation():
 def ajouteRegle():
     nom = request.form.get('nom')
     description = request.form.get('description')
-    condition = request.form.get("condition")
+    champ = request.form.get('champ')
+    operateur = request.form.get('operateur')
+    valeur = request.form.get('valeur', '')
 
-    if nom and description and condition:
-        rs.ajouter_regle(
-            nom,
-            description,
-            condition
-        )
+    if nom and description and champ and operateur:
+        try:
+            rs.ajouter_regle(nom, description, champ, operateur, valeur)
+        except ValueError:
+            pass
 
     return redirect(url_for('admin.admin_dashboard'))
 
