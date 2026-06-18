@@ -29,15 +29,19 @@ def login_page():
 @reqlogged
 def switchmdp():
     if request.method == 'POST':
+        old_mdp = request.form.get("old_password")
         new_mdp = request.form.get("new_password")
         username = session["username"]
-        if new_mdp:
-            us.changepwd(username, new_mdp)
-            flash("Mot de passe modifié avec succès.", "success")
-            return redirect(url_for('admin.admin_dashboard'))
+        if us.verifMDP(username,old_mdp):
+            if new_mdp:
+                us.changepwd(username, new_mdp)
+                flash("Mot de passe modifié avec succès.", "success")
+                return redirect(url_for('admin.admin_dashboard'))
+            else:
+                return "Aucun mot de passe reçu !", 400
         else:
-            return "Aucun mot de passe reçu !", 400
-
+            msg_err= "Votre mémoire vous jouerait-elle des tours ?"
+            return render_template('switchmdp.html', msg = msg_err)
     # Note: Idéalement, mettez ce HTML dans switchmdp.html
     return render_template('switchmdp.html') 
 

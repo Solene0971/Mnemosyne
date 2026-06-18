@@ -22,3 +22,6 @@ class UserService():
 	
 	def getAllUser(self):
 		return self.udao.getAllUser()
+
+	def verifMDP(self,username, password):
+		return self.udao.verifyMDP(username,password)
