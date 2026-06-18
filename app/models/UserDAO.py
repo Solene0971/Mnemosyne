@@ -31,8 +31,8 @@ class UserSqliteDAO(UserDAOInterface):
         conn.execute('''
             CREATE TABLE IF NOT EXISTS admin (
                 id INTEGER PRIMARY KEY,
-                password TEXT NOT NULL,
-                switchmdp INTEGER NOT NULL DEFAULT 1
+                username TEXT NOT NULL UNIQUE,
+                password TEXT NOT NULL
             );
         ''')
         conn.commit()
@@ -44,10 +44,10 @@ class UserSqliteDAO(UserDAOInterface):
         password_hash = hashed_bytes.decode('utf-8')
         return password_hash
 
-    def verifyMDP(self, password):
+    def verifyMDP(self,username, password):
         conn = self._getDbConnection()
         try:
-            user = conn.execute("SELECT * FROM admin WHERE id = ?;",(1,)).fetchone()
+            user = conn.execute("SELECT * FROM admin WHERE username = ?;",(username,)).fetchone()
         except sqlite3.OperationalError:
             return None
         finally:
@@ -60,21 +60,53 @@ class UserSqliteDAO(UserDAOInterface):
             if bcrypt.checkpw(password_bytes, stored_hash_bytes):
                 return User(user)
                 
-        return None 
+        return None
     
-    def change_mdp(self, mdp):
+    def addUser(self, username, password):
+        conn = self._getDbConnection()
+        hached_pwd = self._generatePwdHash(password)
+        try:
+            conn.execute("insert into admin (username,password) values (?,?)", (username,hached_pwd,))
+            conn.commit()
+        except sqlite3.OperationalError:
+            return None
+        finally:
+            conn.close()
+        return None
+    
+    def suppUser(self,username):
+        conn = self._getDbConnection()
+        try:
+            conn.execute("delete from admin where username = ?",(username,))
+            conn.commit()
+        except sqlite3.OperationalError:
+            return None
+        finally:
+            conn.close()
+        return None
+    
+    def getAllUser(self):
+        conn = self._getDbConnection()
+        try:
+            users = conn.execute('select * from admin').fetchall()
+        except sqlite3.OperationalError:
+            return None
+        finally:
+            conn.close()
+
+        if users:
+            return [User(user_data) for user_data in users]
+        return None
+        
+    
+    def change_mdp(self,username, mdp):
         mdphashed = self._generatePwdHash(mdp)
         conn = self._getDbConnection()
-        conn.execute("update admin set password = ?, switchmdp = ? where id = 1;",(mdphashed,0,))
+        conn.execute("update admin set password = ? where username = ?;",(mdphashed,username,))
         conn.commit()
         conn.close()
-        user = self.verifyMDP(mdp)
+        user = self.verifyMDP(username,mdp)
         if user :
             return True 
         return False 
         
-    def getSwitch_mdp(self):
-        conn = self._getDbConnection()
-        var = conn.execute("select switchmdp from admin where id = 1;").fetchone()
-        conn.close()
-        return var[0]

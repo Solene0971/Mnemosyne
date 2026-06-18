@@ -18,10 +18,10 @@
 
     <!-- ===== HEADER ===== -->
     <header>
-        <a href="{{ url_for('admin.dashboard') }}" class="logo-link">
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="logo-link">
             <img src="{{ url_for('static', filename='img/logo_univ.png') }}" alt="Université Sorbonne Paris Nord">
         </a>
-        <a href="{{ url_for('admin.dashboard') }}" class="btn-back">
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn-back">
             <i class="bi bi-arrow-left"></i> Retour
         </a>
     </header>
@@ -48,7 +48,7 @@
         {% endwith %}
 
         <!-- ===== FORMULAIRE ===== -->
-        <form id="changePwdForm" action="{{ url_for('admin.change_mdp') }}" method="POST" onsubmit="return validateForm()">
+        <form id="changePwdForm" action="{{ url_for('login.switchmdp') }}" method="POST" onsubmit="return validateForm()">
 
             <!-- Ancien mot de passe -->
             <div class="form-group">
@@ -58,6 +58,10 @@
                     <button type="button" class="toggle-pwd" onclick="togglePassword('old_password', this)">
                         <i class="bi bi-eye"></i>
                     </button>
+                    <!-- Message d'erreur pour l'ancien mot de passe -->
+                    {% if msg %}
+                        <small style="color: #C82343; font-weight: bold; margin-top: 5px;">{{ msg }}</small>
+                    {% endif %}
                 </div>
             </div>
 
