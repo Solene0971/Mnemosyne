@@ -18,9 +18,14 @@
         <a href="{{ url_for('index.index') }}" class="logo-link" title="Retour à l'accueil">
             <img src="{{ url_for('static', filename='img/logo_univ.png') }}" alt="Université Sorbonne Paris Nord" class="logo-univ">
         </a>
-        <a href="{{ url_for('login.logout') }}" class="btn-logout">
-            <i class="bi bi-box-arrow-right"></i> Oublier
-        </a>
+        <div class="header-buttons">
+            <button class="btn-switch" onclick="window.location.href='{{ url_for('login.switchmdp') }}'">
+                <i class="bi bi-key-fill"></i> Changer le mot de passe
+            </button>
+            <a href="{{ url_for('login.logout') }}" class="btn-logout">
+                <i class="bi bi-box-arrow-right"></i> Oublier
+            </a>
+        </div>
     </header>
 
     <div class="container">
@@ -117,6 +122,56 @@
                 <button type="submit" class="btn-beige">Ajouter la règle</button>
             </form>
         </div>
+
+        {% if session['username'] == 'admin' %}
+    <h2 class="section-title">Gestion des utilisateurs</h2>
+    <hr class="divider">
+
+    <div class="user_table_container">
+        <table class="rules-table">
+            <thead>
+                <tr>
+                    <th>Nom d'utilisateur</th>
+                    <th>Mot de passe</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.password }}</td>
+                    <td>
+                        {% if user.username != 'admin' %}
+                        <form action="{{ url_for('admin.suppUser') }}" method="POST">
+                            <input type="hidden" name="username" value="{{ user.username }}">
+                            <button type="submit" class="badge-delete">SUPPRIMER</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="add-rule-box" style="margin-bottom: 40px;">
+        <div class="add-rule-title">Ajouter un nouvel utilisateur</div>
+        
+        <form action="{{ url_for('admin.ajouteUser') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label" for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" class="form-input" required>
+                <small id="user-error" style="color: #C82343; font-weight: bold; display: none; margin-top: 5px;"></small>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Mot de passe</label>
+                <input type="password" id="password" name="password" class="form-input" required>
+            </div>
+            <button type="submit" class="btn-beige">Ajouter l'utilisateur</button>
+        </form>
+    </div>
+    {% endif %}
     </div>
 
     <script>
@@ -182,6 +237,28 @@
             errorMsg.style.display = 'none';
             return true;
         }
+
+        document.querySelector(`form[action="{{ url_for('admin.ajouteUser') }}"]`).addEventListener('submit', function(event) {
+        // On récupère le pseudo en minuscules et sans espaces
+        const username = document.getElementById('username').value.trim().toLowerCase();
+        const errorMsg = document.getElementById('user-error');
+        
+        // On vérifie si c'est "admin"
+        if (username === 'admin') {
+            event.preventDefault(); // 🛑 BLOQUE L'ENVOI ET LE RECHARGEMENT
+            
+            // Affiche le message rouge en dessous du champ
+            errorMsg.innerText = "⚠️ Erreur : Le nom d'utilisateur 'admin' est interdit.";
+            errorMsg.style.display = 'block';
+            
+            // Optionnel : remet le curseur dans le champ pour que l'utilisateur corrige
+            document.getElementById('username').focus();
+            return; // On arrête là
+        }
+        
+        // Si ce n'est pas admin, on cache l'erreur (au cas où elle était affichée) et le formulaire part !
+        errorMsg.style.display = 'none';
+        });
     </script>
 </body>
 </html>

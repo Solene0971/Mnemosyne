@@ -1,20 +1,25 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, session
 from app.services.ScoDocService import ScoDocService
 from app.services.DonneeService import DonneeService
 from app.tools import reqlogged
 from app.services.RegleService import RegleService
+from app.services.UserService import UserService
 
 # Création du Blueprint
 admin_bp = Blueprint('admin', __name__)
 #Création de l'objet AdminController
 rs = RegleService()
+us = UserService()
 
 @admin_bp.route('/admin', methods=['GET'])
 @reqlogged
 def admin_dashboard():
     """Affiche la page d'administration"""
     r = rs.get_regles()
-    return render_template('admin.html', rules = r)
+    username = session['username']
+    u = us.getAllUser()
+    
+    return render_template('admin.html', rules = r, user = username, users = u)
 
 @admin_bp.route('/admin/init', methods=['POST'])
 @reqlogged
@@ -65,12 +70,33 @@ def ajouteRegle():
 
     return redirect(url_for('admin.admin_dashboard'))
 
+@admin_bp.route('/admin/adduser', methods=['POST'])
+@reqlogged
+def ajouteUser():
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    if username and password:
+        us.addUser(username,password)
+
+    
+    
+    return redirect(url_for('admin.admin_dashboard'))
+
 
 @admin_bp.route('/admin/delregle', methods=['POST'])
 @reqlogged
 def suppRegle():
     index = int(request.form.get('index'))
     rs.supprimer_regle(index)
+    return redirect(url_for('admin.admin_dashboard'))
+
+@admin_bp.route('/admin/deluser', methods=['POST'])
+@reqlogged
+def suppUser():
+    username = request.form.get('username')
+    if username:
+        us.delUser(username)
     return redirect(url_for('admin.admin_dashboard'))
 
 
