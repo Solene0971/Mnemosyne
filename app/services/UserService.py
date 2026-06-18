@@ -8,11 +8,17 @@ class UserService():
 	def __init__(self):
 		self.udao = UserDAO()
 
-	def login(self, password):
-		return self.udao.verifyMDP(password)
+	def login(self,username, password):
+		return self.udao.verifyMDP(username,password)
 	
-	def changepwd(self,password):
-		return self.udao.change_mdp(password)
+	def changepwd(self,username,password):
+		return self.udao.change_mdp(username,password)
 	
-	def getSwitchMDP(self):
-		return self.udao.getSwitch_mdp()
+	def addUser(self,username, password):
+		return self.udao.addUser(username,password)
+	
+	def delUser(self,username):
+		return self.udao.suppUser(username)
+	
+	def getAllUser(self):
+		return self.udao.getAllUser()

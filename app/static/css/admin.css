@@ -27,13 +27,36 @@
         .logo-link:hover { opacity: 0.8; }
         .logo-univ { height: 50px; object-fit: contain; }
 
-        .btn-logout {
-            color: white; text-decoration: none; font-family: 'Playfair Display', sans-serif;
-            font-size: 1rem; font-weight: 500; padding: 8px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 4px;
-            transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;
+        /* Nouveau conteneur pour aligner les boutons du header */
+        .header-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
-        .btn-logout:hover { background-color: white; color: #1F2A44; border-color: white; }
+
+        /* Style unifié pour les boutons du header */
+        .btn-logout, .btn-switch {
+            color: white; 
+            text-decoration: none; 
+            font-family: 'Playfair Display', sans-serif;
+            font-size: 1rem; 
+            font-weight: 500; 
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.5); 
+            border-radius: 4px;
+            background-color: transparent;
+            transition: all 0.3s ease; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .btn-logout:hover, .btn-switch:hover { 
+            background-color: white; 
+            color: #1F2A44; 
+            border-color: white; 
+        }
 
         /* --- CONTAINER --- */
         .container {

@@ -32,7 +32,7 @@ cur = connection.cursor()
 
 # Insertion de l'admin
 try:
-    cur.execute("insert into admin (password) values (?)", (mdp,))
+    cur.execute("insert into admin (username,password) values (?,?)", ("admin",mdp,))
     print("Utilisateur admin créé avec succès.")
 except sqlite3.Error as e:
     print(f"Erreur lors de l'insertion : {e}")

@@ -11,16 +11,14 @@ us = UserService()
 def login_page():
     msg_error = None
     if request.method == 'POST':
+        username = request.form.get("username")
         # On récupère le mot de passe
         pwd = request.form.get("password")
-        user = us.login(pwd)
+        user = us.login(username,pwd)
         
         if user:
             session["logged"] = True
-            # Si l'utilisateur doit changer son mot de passe
-            if us.getSwitchMDP() == 1:
-                return redirect(url_for("login.switchmdp"))
-            # Sinon direction le dashboard admin
+            session["username"] = username
             return redirect(url_for("admin.admin_dashboard"))
         else:
             msg_error = 'Identifiants invalides'
@@ -32,8 +30,9 @@ def login_page():
 def switchmdp():
     if request.method == 'POST':
         new_mdp = request.form.get("new_password")
+        username = session["username"]
         if new_mdp:
-            us.changepwd(new_mdp)
+            us.changepwd(username, new_mdp)
             flash("Mot de passe modifié avec succès.", "success")
             return redirect(url_for('admin.admin_dashboard'))
         else:
