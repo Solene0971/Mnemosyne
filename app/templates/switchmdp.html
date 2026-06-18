@@ -58,6 +58,10 @@
                     <button type="button" class="toggle-pwd" onclick="togglePassword('old_password', this)">
                         <i class="bi bi-eye"></i>
                     </button>
+                    <!-- Message d'erreur pour l'ancien mot de passe -->
+                    {% if msg %}
+                        <small style="color: #C82343; font-weight: bold; margin-top: 5px;">{{ msg }}</small>
+                    {% endif %}
                 </div>
             </div>
 
