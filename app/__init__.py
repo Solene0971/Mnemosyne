@@ -8,7 +8,7 @@ def create_app():
     DB_PATH = os.path.join(INSTANCE_DIR, 'scolarite.db')
     
     app = Flask(__name__, instance_path=INSTANCE_DIR)
-    app.config['DATABASE'] = DB_PATH
+    app.config['DATABASE'] = os.getenv('DATABASE_PATH', DB_PATH)
 
     # Config Auth
     app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
