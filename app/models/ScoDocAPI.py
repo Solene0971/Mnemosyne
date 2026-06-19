@@ -57,6 +57,7 @@ class ScoDocAPI:
         try:
             response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
+            return response.json()
 
         except Exception as e:
             err_msg = f"Erreur requête API {url}: {e}"
