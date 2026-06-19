@@ -1,0 +1,364 @@
+/* ===== RESET & BASE ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #f5f0eb;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* ===== HEADER ===== */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #1a1a2e;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.logo-link img {
+    height: 45px;
+}
+
+.btn-back {
+    color: #e8d5b7;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border: 1.5px solid #e8d5b7;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    background: #e8d5b7;
+    color: #1a1a2e;
+}
+
+/* ===== CARD PRINCIPALE ===== */
+.card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 50px 45px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    margin-top: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #8b6b4a, #c9a87c, #8b6b4a);
+}
+
+/* ===== TITRE ===== */
+.card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: #1a1a2e;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.card-subtitle {
+    text-align: center;
+    color: #7a7a8a;
+    font-size: 14px;
+    font-weight: 300;
+    margin-bottom: 30px;
+}
+
+.card-subtitle i {
+    color: #c9a87c;
+    margin-right: 5px;
+}
+
+/* ===== DIVIDER ===== */
+.divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d4c5b5, transparent);
+    margin-bottom: 30px;
+}
+
+/* ===== CHAMPS ===== */
+.form-group {
+    margin-bottom: 22px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #3a3a4a;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+.form-group label i {
+    color: #c9a87c;
+    margin-right: 6px;
+    width: 18px;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 12px 18px;
+    padding-right: 45px;
+    font-size: 15px;
+    font-family: 'Roboto', sans-serif;
+    border: 1.5px solid #e0d6cc;
+    border-radius: 10px;
+    background: #faf8f6;
+    transition: all 0.3s ease;
+    color: #1a1a2e;
+}
+
+.input-wrapper input:focus {
+    outline: none;
+    border-color: #c9a87c;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(201, 168, 124, 0.15);
+}
+
+.input-wrapper input::placeholder {
+    color: #b0a89a;
+    font-weight: 300;
+}
+
+.input-wrapper .toggle-pwd {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #b0a89a;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    padding: 5px;
+}
+
+.input-wrapper .toggle-pwd:hover {
+    color: #8b6b4a;
+}
+
+/* ===== FORCE DU MOT DE PASSE ===== */
+.password-strength {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.strength-bar {
+    flex: 1;
+    height: 4px;
+    background: #e8e0d8;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.strength-bar .fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 4px;
+    transition: width 0.4s ease, background 0.4s ease;
+}
+
+.strength-text {
+    font-size: 11px;
+    font-weight: 500;
+    color: #7a7a8a;
+    min-width: 55px;
+    text-align: right;
+}
+
+/* ===== MESSAGES ===== */
+.msg-box {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.msg-box i {
+    font-size: 18px;
+}
+
+.msg-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #4caf50;
+}
+
+.msg-error {
+    background: #fbe9e7;
+    color: #c62828;
+    border-left: 4px solid #e53935;
+}
+
+.msg-info {
+    background: #e3f2fd;
+    color: #0d47a1;
+    border-left: 4px solid #1e88e5;
+}
+
+/* ===== BOUTON ===== */
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Roboto', sans-serif;
+    color: #ffffff;
+    background: linear-gradient(135deg, #8b6b4a, #6d4f34);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(107, 79, 52, 0.35);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-submit i {
+    margin-right: 8px;
+}
+
+/* ===== CRITÈRES MDP ===== */
+.criteria {
+    margin: 16px 0 22px 0;
+    padding: 14px 18px;
+    background: #f8f5f1;
+    border-radius: 10px;
+}
+
+.criteria-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: #5a5a6a;
+    margin-bottom: 8px;
+}
+
+.criteria-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+}
+
+.criteria-list li {
+    font-size: 12px;
+    color: #8a8a9a;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.3s ease;
+}
+
+.criteria-list li i {
+    font-size: 14px;
+    color: #b0a89a;
+    transition: color 0.3s ease;
+}
+
+.criteria-list li.valid {
+    color: #2e7d32;
+}
+
+.criteria-list li.valid i {
+    color: #4caf50;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+    header {
+        padding: 12px 20px;
+    }
+
+    .logo-link img {
+        height: 35px;
+    }
+
+    .card {
+        padding: 35px 25px;
+        margin-top: 80px;
+    }
+
+    .card-title {
+        font-size: 22px;
+    }
+
+    .btn-back {
+        font-size: 12px;
+        padding: 6px 14px;
+    }
+
+    .criteria-list {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+
+@media (max-width: 400px) {
+    .card {
+        padding: 25px 18px;
+    }
+
+    .form-group input {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+
+    .btn-submit {
+        font-size: 14px;
+        padding: 12px;
+    }
+}

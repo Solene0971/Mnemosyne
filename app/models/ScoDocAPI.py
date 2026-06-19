@@ -1,6 +1,7 @@
 import requests
 from typing import Dict, List, Optional, Tuple
 from flask import current_app
+import os
 
 class ScoDocAPI:
     """Classe pour interagir avec l'API ScoDoc"""
@@ -21,8 +22,8 @@ class ScoDocAPI:
         """
         Retourne les identifiants pour se connecter à ScoDoc
         """
-        id = ''
-        mdp = ''
+        id = os.getenv("SCODOC_ID")
+        mdp = os.getenv("SCODOC_PASSWORD")
         return id, mdp
 
     def _recupToken(self) -> str:
@@ -57,6 +58,7 @@ class ScoDocAPI:
         try:
             response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
+            return response.json()
 
         except Exception as e:
             err_msg = f"Erreur requête API {url}: {e}"

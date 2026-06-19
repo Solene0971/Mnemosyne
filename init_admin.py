@@ -1,6 +1,9 @@
 import sqlite3
 import bcrypt
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configuration des chemins
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,7 +22,7 @@ def _generatePwdHash(password):
     return password_hash
 
 # Mot de passe par défaut
-mdp = _generatePwdHash("mnemosyne")
+mdp = _generatePwdHash(os.getenv('ADMIN_PASSWORD'))
 
 print(f"Connexion à la base de données : {DB_PATH}")
 connection = sqlite3.connect(DB_PATH)
@@ -32,7 +35,7 @@ cur = connection.cursor()
 
 # Insertion de l'admin
 try:
-    cur.execute("insert into admin (username,password) values (?,?)", ("admin",mdp,))
+    cur.execute("insert into admin (username,password) values (?,?)", (os.getenv('ADMIN_USERNAME'),mdp,))
     print("Utilisateur admin créé avec succès.")
 except sqlite3.Error as e:
     print(f"Erreur lors de l'insertion : {e}")
