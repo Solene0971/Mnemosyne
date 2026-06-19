@@ -110,8 +110,8 @@ class DonneeDAO:
 
     def get_all_departements(self):
         cursor = self.get_db().cursor()
-        cursor.execute("SELECT acronyme FROM departement WHERE acronyme NOT IN ('FC', 'P_CJ_GEA') ORDER BY acronyme")
-        return [row['acronyme'] for row in cursor.fetchall()]
+        cursor.execute("SELECT nom FROM departement WHERE acronyme NOT IN ('FC', 'P_CJ_GEA') ORDER BY nom")
+        return [row['nom'] for row in cursor.fetchall()]
 
     def get_all_annees(self):
         cursor = self.get_db().cursor()

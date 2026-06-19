@@ -42,6 +42,10 @@
             <button type="submit" class="btn-sync">import avec ScoDoc</button>
         </form>
 
+        <div id="sync-status" class="msg-box msg-info" style="display:none; margin-top: 10px;">
+            Synchronisation en cours… Allez prendre un café, c'est moi qui régale.
+        </div>
+
         {% if msg_db %} <div class="msg-box msg-info">{{ msg_db }}</div> {% endif %}
         {% if msg_import %} <div class="msg-box msg-success">{{ msg_import }}</div> {% endif %}
 
@@ -399,7 +403,13 @@
 
         document.getElementById('form-sync').addEventListener('submit', function(event) {
             const choix = confirm("Lancer la synchronisation ?");
-            if (!choix) { event.preventDefault(); }
+            if (!choix) {
+                event.preventDefault();
+                return;
+            }
+            document.getElementById('sync-status').style.display = 'block';
+            document.querySelector('#form-sync button[type="submit"]').disabled = true;
+            document.querySelector('#form-init button[type="submit"]').disabled = true;
         });
 
         document.querySelector(`form[action="{{ url_for('admin.ajouteUser') }}"]`).addEventListener('submit', function(event) {
