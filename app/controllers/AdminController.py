@@ -5,12 +5,6 @@ from app.tools import reqlogged
 from app.services.RegleService import RegleService
 from app.services.UserService import UserService
 
-def _get_champs_list():
-    try:
-        return DonneeService().get_champs_list()
-    except Exception:
-        return []
-
 # Création du Blueprint
 admin_bp = Blueprint('admin', __name__)
 #Création de l'objet AdminController
@@ -25,7 +19,7 @@ def admin_dashboard():
     username = session['username']
     u = us.getAllUser()
     
-    return render_template('admin.html', rules=r, user=username, users=u, champs_list=_get_champs_list())
+    return render_template('admin.html', rules = r, user = username, users = u)
 
 @admin_bp.route('/admin/init', methods=['POST'])
 @reqlogged
@@ -41,7 +35,7 @@ def initialisation():
     except Exception as e:
         msg_db = f"Erreur lors de l'initialisation : {e}"
 
-    return render_template("admin.html", msg_db=msg_db, champs_list=_get_champs_list())
+    return render_template("admin.html", msg_db=msg_db)
 
 @admin_bp.route('/admin/sync', methods=['POST'])
 @reqlogged
@@ -58,7 +52,7 @@ def synchronisation():
         msg_import = f"Erreur Import : {e}"
     
     r = rs.get_regles()
-    return render_template('admin.html', msg_import=msg_import, stats=stats, rules=r, champs_list=_get_champs_list())
+    return render_template('admin.html', msg_import=msg_import, stats=stats, rules=r)
 
 @admin_bp.route('/admin/addregle', methods=['POST'])
 @reqlogged
