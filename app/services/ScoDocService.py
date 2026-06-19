@@ -10,7 +10,7 @@ class ScoDocService:
         self.dao = DonneeDAO()
         # Configuration de l'url vers ScoDoc
         url = os.getenv('SCODOC_API_URL', 'https://scodoc.univ-paris13.fr/ScoDoc/api')
-        #Récupération de la connection vers l'API        
+        #Récupération de la connection vers l'API
         self.api = ScoDocAPI(url)
 
     def run_synchronisation(self):
