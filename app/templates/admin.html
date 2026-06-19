@@ -18,9 +18,14 @@
         <a href="{{ url_for('index.index') }}" class="logo-link" title="Retour à l'accueil">
             <img src="{{ url_for('static', filename='img/logo_univ.png') }}" alt="Université Sorbonne Paris Nord" class="logo-univ">
         </a>
-        <a href="{{ url_for('login.logout') }}" class="btn-logout">
-            <i class="bi bi-box-arrow-right"></i> Oublier
-        </a>
+        <div class="header-buttons">
+            <button class="btn-switch" onclick="window.location.href='{{ url_for('login.switchmdp') }}'">
+                <i class="bi bi-key-fill"></i> Changer le mot de passe
+            </button>
+            <a href="{{ url_for('login.logout') }}" class="btn-logout">
+                <i class="bi bi-box-arrow-right"></i> Oublier
+            </a>
+        </div>
     </header>
 
     <div class="container">
@@ -71,7 +76,7 @@
                 <tr>
                     <td>{{ rule.nom }}</td>
                     <td>{{ rule.description }}</td>
-                    <td>{{ rule.condition }}</td>
+                    <td>{{ rule.champ }} {{ rule.operateur }} {{ rule.valeur }}</td>
                     <td>
                         <form action="{{ url_for('admin.update_statut') }}" method="POST">
                             <input type="hidden" name="index" value="{{ loop.index0 }}">
@@ -96,8 +101,8 @@
 
         <div class="add-rule-box">
             <div class="add-rule-title">Ajouter une nouvelle règle</div>
-            
-            <form action="{{ url_for('admin.ajouteRegle') }}" method="POST" onsubmit="return validateSQL()">
+
+            <form action="{{ url_for('admin.ajouteRegle') }}" method="POST">
                 <div class="form-group">
                     <label class="form-label" for="nom">Nom de la règle</label>
                     <input type="text" id="nom" name="nom" class="form-input" required>
@@ -109,17 +114,283 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="condition">Condition (expression WHERE)</label>
-                    <input type="text" id="condition" name="condition" class="form-input" placeholder="Ex: moyenne > 10 AND absences < 5" required>
-                    <small id="sql-error" style="color: #C82343; font-weight: bold; display: none; margin-top: 5px;"></small>
+                    <label class="form-label">Condition</label>
+                    <div style="display: grid; grid-template-columns: 2fr 100px 2fr; gap: 10px; align-items: end;">
+                        <div style="position:relative;">
+                            <small style="color:#888; display:block; margin-bottom:4px;">Champ</small>
+                            <input type="text" id="champ-display" class="form-input"
+                                   placeholder="Rechercher ou saisir un champ…"
+                                   autocomplete="off"
+                                   oninput="onChampInput()"
+                                   onfocus="onChampFocus()">
+                            <input type="hidden" name="champ" id="champ">
+                            <div id="champs-dropdown" style="
+                                display:none; position:absolute; z-index:1000;
+                                background:#1a1a2e; border:1px solid #555;
+                                border-radius:6px; width:100%; max-height:280px;
+                                overflow-y:auto; box-shadow:0 6px 18px rgba(0,0,0,0.4);
+                                top:calc(100% + 2px); left:0;
+                            "></div>
+                        </div>
+                        <div>
+                            <small style="color:#888; display:block; margin-bottom:4px;">Opérateur</small>
+                            <select name="operateur" id="operateur" class="form-input" required>
+                                <option value="=">=</option>
+                                <option value=">">&gt;</option>
+                                <option value="<">&lt;</option>
+                                <option value=">=">&gt;=</option>
+                                <option value="<=">&lt;=</option>
+                                <option value="!=">!=</option>
+                                <option value="LIKE">LIKE</option>
+                            </select>
+                        </div>
+                        <div style="position:relative;">
+                            <small id="valeur-hint" style="color:#888; display:block; margin-bottom:4px;">Valeur</small>
+                            <input type="text" id="valeur-display" class="form-input" placeholder="Valeur"
+                                   autocomplete="off" required
+                                   oninput="onValeurInput()"
+                                   onfocus="onValeurFocus()">
+                            <input type="hidden" name="valeur" id="valeur">
+                            <div id="valeurs-dropdown" style="
+                                display:none; position:absolute; z-index:1000;
+                                background:#1a1a2e; border:1px solid #555;
+                                border-radius:6px; width:100%; max-height:220px;
+                                overflow-y:auto; box-shadow:0 6px 18px rgba(0,0,0,0.4);
+                                top:calc(100% + 2px); left:0;
+                            "></div>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-beige">Ajouter la règle</button>
             </form>
         </div>
+
+        {% if session['username'] == 'admin' %}
+    <h2 class="section-title">Gestion des utilisateurs</h2>
+    <hr class="divider">
+
+    <div class="user_table_container">
+        <table class="rules-table">
+            <thead>
+                <tr>
+                    <th>Nom d'utilisateur</th>
+                    <th>Mot de passe</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.password }}</td>
+                    <td>
+                        {% if user.username != 'admin' %}
+                        <form action="{{ url_for('admin.suppUser') }}" method="POST">
+                            <input type="hidden" name="username" value="{{ user.username }}">
+                            <button type="submit" class="badge-delete">SUPPRIMER</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="add-rule-box" style="margin-bottom: 40px;">
+        <div class="add-rule-title">Ajouter un nouvel utilisateur</div>
+        
+        <form action="{{ url_for('admin.ajouteUser') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label" for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" class="form-input" required>
+                <small id="user-error" style="color: #C82343; font-weight: bold; display: none; margin-top: 5px;"></small>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Mot de passe</label>
+                <input type="password" id="password" name="password" class="form-input" required>
+            </div>
+            <button type="submit" class="btn-beige">Ajouter l'utilisateur</button>
+        </form>
+    </div>
+    {% endif %}
     </div>
 
     <script>
+        // --- Combobox champ : données ---
+        const CHAMPS_LIST = [
+            { alias: 'f.annee_but',           label: "Année BUT",               hint: '1, 2 ou 3',                              placeholder: 'Ex : 1',    ops: ['=','!=','>','<','>=','<='],
+              values: [
+                  { val: '1', label: 'BUT 1 — 1ère année' },
+                  { val: '2', label: 'BUT 2 — 2ème année' },
+                  { val: '3', label: 'BUT 3 — 3ème année' },
+              ]},
+            { alias: 'i.annee_universitaire', label: "Année universitaire",     hint: 'ex. 2021, 2022, 2023 …',                 placeholder: 'Ex : 2021', ops: ['=','!=','>','<','>=','<='],
+              values: null },
+            { alias: 'i.moyenne',             label: "Moyenne de l'étudiant",   hint: '0 à 20  (ex. 10, 12.5)',                 placeholder: 'Ex : 10',   ops: ['=','!=','>','<','>=','<='],
+              values: null },
+            { alias: 'd.acronyme',            label: "Département",              hint: 'CJ · GEA · GEII · INFO · RT · STID',    placeholder: 'Ex : INFO', ops: ['=','!='],
+              values: [
+                  { val: 'CJ',   label: 'CJ — Carrières Juridiques' },
+                  { val: 'GEA',  label: 'GEA — Gestion des Entreprises' },
+                  { val: 'GEII', label: 'GEII — Génie Électrique' },
+                  { val: 'INFO', label: 'INFO — Informatique' },
+                  { val: 'RT',   label: 'RT — Réseaux & Télécommunications' },
+                  { val: 'STID', label: 'STID — Statistique & Informatique Décisionnelle' },
+              ]},
+            { alias: 'r.acronyme',            label: "Rythme",                   hint: 'FI  ou  FA',                             placeholder: 'Ex : FI',   ops: ['=','!='],
+              values: [
+                  { val: 'FI', label: 'FI — Formation Initiale' },
+                  { val: 'FA', label: 'FA — Formation en Alternance (apprentissage)' },
+              ]},
+            { alias: 'dec.acronyme',          label: "Décision du jury",         hint: 'ADM · AJ · ABAN · NAR · RED · INS …',   placeholder: 'Ex : ADM',  ops: ['=','!='],
+              values: [
+                  { val: 'ADM',     label: 'ADM — Admis' },
+                  { val: 'ADM-INC', label: 'ADM-INC — Admis (résultats incomplets)' },
+                  { val: 'AJ',      label: 'AJ — Ajourné' },
+                  { val: 'ABAN',    label: 'ABAN — Abandon' },
+                  { val: 'ATJ',     label: 'ATJ — Ajourné toléré' },
+                  { val: 'CMP',     label: 'CMP — Compensé' },
+                  { val: 'VCC',     label: 'VCC — Validé par capitalisation des compétences' },
+                  { val: 'DIP',     label: 'DIP — Diplômé' },
+                  { val: 'NAR',     label: 'NAR — Non autorisé à redoubler' },
+                  { val: 'RED',     label: 'RED — Redoublant' },
+              ]},
+            { alias: 'dec.nom',               label: "Libellé décision",         hint: 'Utilisez % comme joker avec LIKE (ex : %Admis%)', placeholder: 'Ex : Admis', ops: ['=','!=','LIKE'],
+              values: null },
+            { alias: 'et.acronyme',           label: "État de l'étudiant",      hint: 'I (Inscrit)  ou  D (Démission)',         placeholder: 'Ex : I',    ops: ['=','!='],
+              values: [
+                  { val: 'I', label: 'I — Inscrit' },
+                  { val: 'D', label: 'D — Démission' },
+              ]},
+        ];
+
+        // Supprime les accents et met en minuscules pour la recherche
+        const normalize = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+        // --- Rendu du dropdown ---
+        function renderDropdown(filter) {
+            const dd = document.getElementById('champs-dropdown');
+            const items = (filter && filter.length > 0)
+                ? CHAMPS_LIST.filter(c =>
+                    normalize(c.label).includes(normalize(filter)) ||
+                    normalize(c.alias).includes(normalize(filter)))
+                : CHAMPS_LIST;
+
+            if (items.length === 0) {
+                dd.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:12px;">Aucun champ trouvé</div>';
+            } else {
+                dd.innerHTML = items.map(c => `
+                    <div onmousedown="selectChamp('${c.alias}')"
+                         style="padding:9px 14px;cursor:pointer;border-bottom:1px solid #2a2a4a;">
+                        <div style="font-weight:bold;font-style:italic;color:#e8d5b7;font-size:13px;">${c.label}</div>
+                        <div style="font-size:11px;color:#888;margin-top:2px;">${c.alias}</div>
+                    </div>`).join('');
+            }
+            dd.style.display = 'block';
+        }
+
+        function selectChamp(alias) {
+            const c = CHAMPS_LIST.find(x => x.alias === alias);
+            document.getElementById('champ-display').value = c ? c.label : alias;
+            document.getElementById('champ').value = alias;
+            document.getElementById('champs-dropdown').style.display = 'none';
+            // Réinitialiser la valeur quand le champ change
+            document.getElementById('valeur-display').value = '';
+            document.getElementById('valeur').value = '';
+            document.getElementById('valeurs-dropdown').style.display = 'none';
+            updateValeurHint();
+        }
+
+        function onChampFocus() {
+            renderDropdown(document.getElementById('champ-display').value);
+        }
+
+        function onChampInput() {
+            const display = document.getElementById('champ-display').value;
+            // Si la saisie correspond exactement à un alias connu, l'utiliser directement
+            const exact = CHAMPS_LIST.find(c => c.alias === display || c.label === display);
+            document.getElementById('champ').value = exact ? exact.alias : display;
+            renderDropdown(display);
+            updateValeurHint();
+        }
+
+        // Fermer les deux dropdowns en cliquant ailleurs
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#champ-display') && !e.target.closest('#champs-dropdown'))
+                document.getElementById('champs-dropdown').style.display = 'none';
+            if (!e.target.closest('#valeur-display') && !e.target.closest('#valeurs-dropdown'))
+                document.getElementById('valeurs-dropdown').style.display = 'none';
+        });
+
+        // --- Dropdown Valeur ---
+        function renderValeurDropdown(filter) {
+            const dd = document.getElementById('valeurs-dropdown');
+            const alias = document.getElementById('champ').value;
+            const cfg = CHAMPS_LIST.find(c => c.alias === alias);
+
+            if (!cfg || !cfg.values) { dd.style.display = 'none'; return; }
+
+            const items = (filter && filter.length > 0)
+                ? cfg.values.filter(v =>
+                    normalize(v.val).includes(normalize(filter)) ||
+                    normalize(v.label).includes(normalize(filter)))
+                : cfg.values;
+
+            if (items.length === 0) {
+                dd.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:12px;">Aucune valeur trouvée</div>';
+            } else {
+                dd.innerHTML = items.map(v => `
+                    <div onmousedown="selectValeur('${v.val}')"
+                         style="padding:9px 14px;cursor:pointer;border-bottom:1px solid #2a2a4a;">
+                        <div style="font-weight:bold;font-style:italic;color:#e8d5b7;font-size:13px;">${v.label}</div>
+                        <div style="font-size:11px;color:#888;margin-top:2px;">${v.val}</div>
+                    </div>`).join('');
+            }
+            dd.style.display = 'block';
+        }
+
+        function selectValeur(val) {
+            document.getElementById('valeur-display').value = val;
+            document.getElementById('valeur').value = val;
+            document.getElementById('valeurs-dropdown').style.display = 'none';
+        }
+
+        function onValeurFocus() {
+            renderValeurDropdown(document.getElementById('valeur-display').value);
+        }
+
+        function onValeurInput() {
+            const display = document.getElementById('valeur-display').value;
+            document.getElementById('valeur').value = display;
+            renderValeurDropdown(display);
+        }
+
+        // --- Aide contextuelle sur la valeur ---
+        function updateValeurHint() {
+            const alias = document.getElementById('champ').value;
+            const valeurDisplay = document.getElementById('valeur-display');
+            const hintEl = document.getElementById('valeur-hint');
+            const opSelect = document.getElementById('operateur');
+            const cfg = CHAMPS_LIST.find(c => c.alias === alias);
+
+            if (cfg) {
+                valeurDisplay.placeholder = cfg.placeholder;
+                hintEl.textContent = cfg.hint;
+                for (let opt of opSelect.options) {
+                    opt.hidden = !cfg.ops.includes(opt.value);
+                }
+                if (opSelect.options[opSelect.selectedIndex].hidden) {
+                    opSelect.value = cfg.ops[0];
+                }
+            } else {
+                valeurDisplay.placeholder = 'Valeur';
+                hintEl.textContent = 'Valeur';
+                for (let opt of opSelect.options) { opt.hidden = false; }
+            }
+        }
+
         // --- 1. Gestion des Pop-ups de confirmation ---
         document.getElementById('form-init').addEventListener('submit', function(event) {
             const choix = confirm("ATTENTION : Suppression totale.\nÊtes-vous sûr ?");
@@ -131,57 +402,27 @@
             if (!choix) { event.preventDefault(); }
         });
 
-        // --- 2. Validation de la syntaxe SQL (Condition) ---
-        function validateSQL() {
-            const input = document.getElementById('condition').value;
-            const errorMsg = document.getElementById('sql-error');
+        document.querySelector(`form[action="{{ url_for('admin.ajouteUser') }}"]`).addEventListener('submit', function(event) {
+        // On récupère le pseudo en minuscules et sans espaces
+        const username = document.getElementById('username').value.trim().toLowerCase();
+        const errorMsg = document.getElementById('user-error');
+        
+        // On vérifie si c'est "admin"
+        if (username === 'admin') {
+            event.preventDefault(); // 🛑 BLOQUE L'ENVOI ET LE RECHARGEMENT
             
-            // A. Vérification de sécurité (Injection basique)
-            // On interdit le point-virgule (;) et les commentaires (--)
-            if (input.includes(';') || input.includes('--') || input.includes('/*')) {
-                errorMsg.innerText = "⚠️ Erreur : Caractères interdits (; -- /*) détectés.";
-                errorMsg.style.display = 'block';
-                return false; // Bloque l'envoi
-            }
-
-            // B. Vérification des parenthèses équilibrées
-            let parentheses = 0;
-            for (let char of input) {
-                if (char === '(') parentheses++;
-                if (char === ')') parentheses--;
-                if (parentheses < 0) break; // Fermante avant ouvrante
-            }
-            if (parentheses !== 0) {
-                errorMsg.innerText = "⚠️ Erreur : Les parenthèses ne sont pas équilibrées.";
-                errorMsg.style.display = 'block';
-                return false;
-            }
-
-            // C. Vérification de présence d'au moins un opérateur
-            // Liste des opérateurs SQL courants
-            const operators = ['=', '>', '<', '>=', '<=', '!=', 'LIKE', 'IN', 'IS NULL', 'IS NOT NULL', 'BETWEEN'];
-            let hasOperator = false;
+            // Affiche le message rouge en dessous du champ
+            errorMsg.innerText = "⚠️ Erreur : Le nom d'utilisateur 'admin' est interdit.";
+            errorMsg.style.display = 'block';
             
-            // On met tout en majuscule pour tester les mots clés comme LIKE ou IN
-            const upperInput = input.toUpperCase();
-            
-            for (let op of operators) {
-                if (upperInput.includes(op)) {
-                    hasOperator = true;
-                    break;
-                }
-            }
-
-            if (!hasOperator) {
-                errorMsg.innerText = "⚠️ Erreur : La condition doit contenir un opérateur (=, >, <, LIKE, etc.).";
-                errorMsg.style.display = 'block';
-                return false;
-            }
-
-            // Si tout est bon, on cache l'erreur et on laisse passer
-            errorMsg.style.display = 'none';
-            return true;
+            // Optionnel : remet le curseur dans le champ pour que l'utilisateur corrige
+            document.getElementById('username').focus();
+            return; // On arrête là
         }
+        
+        // Si ce n'est pas admin, on cache l'erreur (au cas où elle était affichée) et le formulaire part !
+        errorMsg.style.display = 'none';
+        });
     </script>
 </body>
 </html>

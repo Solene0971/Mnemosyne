@@ -148,12 +148,14 @@
                 <h4>Nuage des Abandons</h4>
                 <div class="chart-container-inner"><canvas id="chartAbandons"></canvas></div>
             </div>
+            {% if sel_rythme == 'TOUS' %}
             <div class="chart-card">
                 <h4>Comparaison Rythme FI/FA <i class="bi bi-bar-chart"></i></h4>
                 <div class="chart-container-inner" style="height: 300px; position: relative;">
                     <canvas id="chartFIFAComparisonNew"></canvas>
                 </div>
             </div>
+            {% endif %}
         </div>
 
     </div>
@@ -241,8 +243,11 @@
             const redoublantEntrantBut3Id = addNode("Redoublant entrant BUT3", 2);
 
             // Créer les liens avec les vraies valeurs
-            if (stats.but1_total > 0) {
-                links.push({ source: entreeId, target: but1Id, value: stats.but1_total, order: 0 });
+            // Les redoublants BUT1 sont déjà dans but1_total → on les soustrait de l'Entrée
+            // pour éviter le double compte (Entrée + Redoublant entrant → BUT1)
+            const nouveauxBut1 = Math.max(0, stats.but1_total - stats.redoublants_entrant_but1);
+            if (nouveauxBut1 > 0) {
+                links.push({ source: entreeId, target: but1Id, value: nouveauxBut1, order: 0 });
             }
 
             // Redoublants entrants (venant de l'année précédente)
@@ -971,14 +976,15 @@
                 }
             });
             
-            // Graphique FI/FA avec Chart.js (nouveau - dans Indicateurs de Performance)
+            {% if sel_rythme == 'TOUS' %}
+            // Graphique FI/FA : affiché seulement quand aucun rythme n'est filtré
             const fiCount = {{ fi_unique_count or 0 }};
             const faCount = {{ fa_unique_count or 0 }};
             const fiGrad = {{ fi_diplome_count or 0 }};
             const faGrad = {{ fa_diplome_count or 0 }};
             const fiNonGrad = Math.max(0, fiCount - fiGrad);
             const faNonGrad = Math.max(0, faCount - faGrad);
-            
+
             if (fiCount > 0 || faCount > 0) {
                 new Chart(document.getElementById('chartFIFAComparisonNew'), {
                     type: 'bar',
@@ -1068,6 +1074,7 @@
                     plugins: [ChartDataLabels]
                 });
             }
+            {% endif %}
         });
     </script>
 

@@ -1,0 +1,17 @@
+# Framework Web
+Flask==3.0.3
+
+# Gestion des variables d'environnement (Sécurisation .env)
+python-dotenv==1.0.1
+
+# Graphiques interactifs (Moteur de rendu Sankey)
+plotly==5.24.0
+
+# Connecteur API (Service ScoDoc)
+requests==2.32.3
+
+# Outil de tests (Tests unitaires)
+pytest==8.3.2
+
+# Hachage sécurisé des mots de passe (Tâche A3)
+bcrypt==4.1.3

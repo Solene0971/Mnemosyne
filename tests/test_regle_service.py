@@ -7,18 +7,16 @@ def service_regles(mocker):
     mocker.patch('app.services.RegleService.RegleDAO')
     return RegleService()
 
-
 def test_ajouter_regle(service_regles):
     # Arrange
     service_regles.rdao.ajouter_regle.return_value = True
     
     # Act
-    resultat = service_regles.ajouter_regle("Exclure DEM", "Exclut les démissionnaires", "etat != 'D'")
+    resultat = service_regles.ajouter_regle("Exclure DEM", "Exclut les démissionnaires", "etat", "!=", "'D'")
     
     # Assert
     assert resultat is True
-    service_regles.rdao.ajouter_regle.assert_called_once_with("Exclure DEM", "Exclut les démissionnaires", "etat != 'D'")
-
+    service_regles.rdao.ajouter_regle.assert_called_once_with("Exclure DEM", "Exclut les démissionnaires", "etat", "!=", "'D'")
 
 def test_modifier_statut(service_regles):
     # Arrange
@@ -30,7 +28,6 @@ def test_modifier_statut(service_regles):
     # Assert
     assert resultat is True
     service_regles.rdao.modifier_statut.assert_called_once_with(1, True)
-
 
 def test_get_regles(service_regles):
     # Arrange
@@ -44,7 +41,6 @@ def test_get_regles(service_regles):
     assert resultat == donnees_factices
     service_regles.rdao.get_regles.assert_called_once()
 
-
 def test_supprimer_regle(service_regles):
     # Arrange
     service_regles.rdao.supprimer_regle.return_value = True
@@ -55,7 +51,6 @@ def test_supprimer_regle(service_regles):
     # Assert
     assert resultat is True
     service_regles.rdao.supprimer_regle.assert_called_once_with(5)
-
 
 def test_finSQL(service_regles):
     # Arrange
