@@ -222,53 +222,8 @@
     </div>
 
     <script>
-        // --- Combobox champ : données ---
-        const CHAMPS_LIST = [
-            { alias: 'f.annee_but',           label: "Année BUT",               hint: '1, 2 ou 3',                              placeholder: 'Ex : 1',    ops: ['=','!=','>','<','>=','<='],
-              values: [
-                  { val: '1', label: 'BUT 1 — 1ère année' },
-                  { val: '2', label: 'BUT 2 — 2ème année' },
-                  { val: '3', label: 'BUT 3 — 3ème année' },
-              ]},
-            { alias: 'i.annee_universitaire', label: "Année universitaire",     hint: 'ex. 2021, 2022, 2023 …',                 placeholder: 'Ex : 2021', ops: ['=','!=','>','<','>=','<='],
-              values: null },
-            { alias: 'i.moyenne',             label: "Moyenne de l'étudiant",   hint: '0 à 20  (ex. 10, 12.5)',                 placeholder: 'Ex : 10',   ops: ['=','!=','>','<','>=','<='],
-              values: null },
-            { alias: 'd.acronyme',            label: "Département",              hint: 'CJ · GEA · GEII · INFO · RT · STID',    placeholder: 'Ex : INFO', ops: ['=','!='],
-              values: [
-                  { val: 'CJ',   label: 'CJ — Carrières Juridiques' },
-                  { val: 'GEA',  label: 'GEA — Gestion des Entreprises' },
-                  { val: 'GEII', label: 'GEII — Génie Électrique' },
-                  { val: 'INFO', label: 'INFO — Informatique' },
-                  { val: 'RT',   label: 'RT — Réseaux & Télécommunications' },
-                  { val: 'STID', label: 'STID — Statistique & Informatique Décisionnelle' },
-              ]},
-            { alias: 'r.acronyme',            label: "Rythme",                   hint: 'FI  ou  FA',                             placeholder: 'Ex : FI',   ops: ['=','!='],
-              values: [
-                  { val: 'FI', label: 'FI — Formation Initiale' },
-                  { val: 'FA', label: 'FA — Formation en Alternance (apprentissage)' },
-              ]},
-            { alias: 'dec.acronyme',          label: "Décision du jury",         hint: 'ADM · AJ · ABAN · NAR · RED · INS …',   placeholder: 'Ex : ADM',  ops: ['=','!='],
-              values: [
-                  { val: 'ADM',     label: 'ADM — Admis' },
-                  { val: 'ADM-INC', label: 'ADM-INC — Admis (résultats incomplets)' },
-                  { val: 'AJ',      label: 'AJ — Ajourné' },
-                  { val: 'ABAN',    label: 'ABAN — Abandon' },
-                  { val: 'ATJ',     label: 'ATJ — Ajourné toléré' },
-                  { val: 'CMP',     label: 'CMP — Compensé' },
-                  { val: 'VCC',     label: 'VCC — Validé par capitalisation des compétences' },
-                  { val: 'DIP',     label: 'DIP — Diplômé' },
-                  { val: 'NAR',     label: 'NAR — Non autorisé à redoubler' },
-                  { val: 'RED',     label: 'RED — Redoublant' },
-              ]},
-            { alias: 'dec.nom',               label: "Libellé décision",         hint: 'Utilisez % comme joker avec LIKE (ex : %Admis%)', placeholder: 'Ex : Admis', ops: ['=','!=','LIKE'],
-              values: null },
-            { alias: 'et.acronyme',           label: "État de l'étudiant",      hint: 'I (Inscrit)  ou  D (Démission)',         placeholder: 'Ex : I',    ops: ['=','!='],
-              values: [
-                  { val: 'I', label: 'I — Inscrit' },
-                  { val: 'D', label: 'D — Démission' },
-              ]},
-        ];
+        // --- Combobox champ : données (générées depuis la base) ---
+        const CHAMPS_LIST = {{ champs_list | tojson }};
 
         // Supprime les accents et met en minuscules pour la recherche
         const normalize = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -288,7 +243,7 @@
                 dd.innerHTML = items.map(c => `
                     <div onmousedown="selectChamp('${c.alias}')"
                          style="padding:9px 14px;cursor:pointer;border-bottom:1px solid #2a2a4a;">
-                        <div style="font-weight:bold;font-style:italic;color:#e8d5b7;font-size:13px;">${c.label}</div>
+                        <div style="font-weight:bold;color:#e8d5b7;font-size:13px;">${c.label}</div>
                         <div style="font-size:11px;color:#888;margin-top:2px;">${c.alias}</div>
                     </div>`).join('');
             }
@@ -348,7 +303,7 @@
                 dd.innerHTML = items.map(v => `
                     <div onmousedown="selectValeur('${v.val}')"
                          style="padding:9px 14px;cursor:pointer;border-bottom:1px solid #2a2a4a;">
-                        <div style="font-weight:bold;font-style:italic;color:#e8d5b7;font-size:13px;">${v.label}</div>
+                        <div style="font-weight:bold;color:#e8d5b7;font-size:13px;">${v.label}</div>
                         <div style="font-size:11px;color:#888;margin-top:2px;">${v.val}</div>
                     </div>`).join('');
             }
