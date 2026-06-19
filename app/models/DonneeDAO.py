@@ -108,6 +108,87 @@ class DonneeDAO:
             db.cursor().executescript(f.read())
         db.commit()
 
+    def get_champs_list(self):
+        try:
+            cur = self.get_db().cursor()
+
+            cur.execute("SELECT acronyme, nom FROM departement ORDER BY acronyme")
+            depts = [{"val": r["acronyme"], "label": f"{r['acronyme']} — {r['nom']}"} for r in cur.fetchall()]
+
+            cur.execute("SELECT acronyme, nom FROM rythme ORDER BY acronyme")
+            rythmes = [{"val": r["acronyme"], "label": f"{r['acronyme']} — {r['nom']}"} for r in cur.fetchall()]
+
+            cur.execute("SELECT acronyme, nom FROM decision ORDER BY acronyme")
+            decisions = [{"val": r["acronyme"], "label": f"{r['acronyme']} — {r['nom']}"} for r in cur.fetchall()]
+
+            cur.execute("SELECT acronyme, nom FROM etat ORDER BY acronyme")
+            etats = [{"val": r["acronyme"], "label": f"{r['acronyme']} — {r['nom']}"} for r in cur.fetchall()]
+
+            cur.execute("SELECT DISTINCT annee_but FROM formation ORDER BY annee_but")
+            annees_but = [{"val": str(r["annee_but"]), "label": f"BUT {r['annee_but']}"} for r in cur.fetchall()]
+        except Exception:
+            depts = rythmes = decisions = etats = []
+            annees_but = []
+
+        if not annees_but:
+            annees_but = [{"val": "1", "label": "BUT 1"}, {"val": "2", "label": "BUT 2"}, {"val": "3", "label": "BUT 3"}]
+
+        return [
+            {
+                "alias": "f.annee_but", "label": "Année BUT",
+                "hint": "1, 2 ou 3", "placeholder": "Ex : 1",
+                "ops": ["=", "!=", ">", "<", ">=", "<="],
+                "values": annees_but
+            },
+            {
+                "alias": "i.annee_universitaire", "label": "Année universitaire",
+                "hint": "ex. 2021, 2022, 2023 …", "placeholder": "Ex : 2021",
+                "ops": ["=", "!=", ">", "<", ">=", "<="],
+                "values": None
+            },
+            {
+                "alias": "i.moyenne", "label": "Moyenne de l'étudiant",
+                "hint": "0 à 20  (ex. 10, 12.5)", "placeholder": "Ex : 10",
+                "ops": ["=", "!=", ">", "<", ">=", "<="],
+                "values": None
+            },
+            {
+                "alias": "d.acronyme", "label": "Département",
+                "hint": " · ".join(d["val"] for d in depts) or "CJ · GEA · INFO …",
+                "placeholder": "Ex : INFO",
+                "ops": ["=", "!="],
+                "values": depts or None
+            },
+            {
+                "alias": "r.acronyme", "label": "Rythme",
+                "hint": "  ou  ".join(r["val"] for r in rythmes) or "FI ou FA",
+                "placeholder": "Ex : FI",
+                "ops": ["=", "!="],
+                "values": rythmes or None
+            },
+            {
+                "alias": "dec.acronyme", "label": "Décision du jury",
+                "hint": " · ".join(d["val"] for d in decisions[:6]) + (" …" if len(decisions) > 6 else ""),
+                "placeholder": "Ex : ADM",
+                "ops": ["=", "!="],
+                "values": decisions or None
+            },
+            {
+                "alias": "dec.nom", "label": "Libellé décision",
+                "hint": "Utilisez % comme joker avec LIKE (ex : %Admis%)",
+                "placeholder": "Ex : Admis",
+                "ops": ["=", "!=", "LIKE"],
+                "values": None
+            },
+            {
+                "alias": "et.acronyme", "label": "État de l'étudiant",
+                "hint": "  ou  ".join(e["val"] for e in etats) or "I ou D",
+                "placeholder": "Ex : I",
+                "ops": ["=", "!="],
+                "values": etats or None
+            },
+        ]
+
     def get_all_departements(self):
         cursor = self.get_db().cursor()
         cursor.execute("SELECT acronyme FROM departement WHERE acronyme NOT IN ('FC', 'P_CJ_GEA') ORDER BY acronyme")
