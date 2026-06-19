@@ -11,8 +11,8 @@ def create_app():
     app.config['DATABASE'] = DB_PATH
 
     # Config Auth
-    app.config["SESSION_COOKIE_SECURE"] = False 
-    app.secret_key = 'votre_cle_secrete_ici' # Changez ceci en prod
+    app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
+    app.secret_key = os.getenv("SECRET_KEY", "dev-key-change-in-production")
 
     try:
         os.makedirs(INSTANCE_DIR)
