@@ -41,9 +41,6 @@ class DonneeService:
         except ValueError:
             return []
 
-    def get_champs_list(self):
-        return self.dao.get_champs_list()
-
     def get_sankey_stats(self, year, dept, rythme, regles_sql, regles_params=None):
         if not year:
             return None
