@@ -1,4 +1,4 @@
-# SAE301
+# SAE401
 Sujet de M. Hébert  - Mnémosyne
 
 > **"Garder la mémoire, éclairer les parcours."**
@@ -23,14 +23,18 @@ L'interface permet aux utilisateurs de visualiser les parcours étudiants via de
 * **Filtres dynamiques :** Choix par année de promotion et par département (ou vision globale "Tout l'IUT").
 * **Visualisation des flux :** Représentation graphique des passages (BUT1 -> BUT2), redoublements, et abandons.
 * **Interactivité :**
-    * Clic sur un flux pour "driller" (ex: suivre spécifiquement les redoublants).
+    * Clic sur un flux pour **rediriger** vers les détails (ex: suivre spécifiquement les redoublants).
     * Affichage des décisions de jury (ADM, PASD, RED, NAR, ADJ).
+* **Statistiques :** Affichage d'indicateurs de performance (taux de passage, taux de diplomation, répartition des origines, etc.).
+* **Export PDF :** Possibilité de télécharger un rapport au format PDF contenant le diagramme et les statistiques.
 
 ### ⚙️ Espace administration
 Réservé à la gestion des données et des règles métier.
 
 * **Synchronisation API :** Bouton pour charger/mettre à jour les données depuis l'API ScoDoc.
-* **Gestion des Scénarii :** Configuration des cas particuliers
+* **Gestion des règles d'analyse  :** Configuration des conditions personnalisées pour analyser les parcours étudiants (ex: identifier les étudiants en difficulté selon des critères définis par l'utilisateur). Ces règles permettent de qualifier automatiquement les situations (réussite, alerte, etc.).
+* **Gestion des administrateurs :** Possibilité d'ajouter et de gérer l'accès à d'autres administrateurs.
+* **Initialisation de la base de données :** Réinitialisation complète de la base avec les données par défaut.
 
 ## 🛠️ Stack technique
 
@@ -44,19 +48,23 @@ Réservé à la gestion des données et des règles métier.
 
 ## 🚀 Installation et démarrage
 
-en cours...
+### 📋 Prérequis
 
-## 👥 Auteurs et Contributions
+Avant de commencer, assurez-vous d'avoir installé :
 
-Projet réalisé dans le cadre de l'IUT de Villetaneuse.
-| Membre | GitHub |
-| :--- | :--- |
-| **Solène BOURG** | [@Solene0971](https://github.com/Solene0971) |
-| **Yacine RABOUDI** | [@notyass](https://github.com/notyass) |
-| **Faizan ISHAQ** | [@faizand9](https://github.com/faizand9) |
-| **Rayan BELQASMI** | [@rayanbelq](https://github.com/rayanbelq) |
-| **Wissam MERIEM** | [@wissammeriem](https://github.com/wissammeriem) |
-| **Christophe LIN HUANG** | [@XingkOng1504](https://github.com/XingkOng1504) |
+| Outil | Version minimale | Téléchargement |
+|-------|------------------|----------------|
+| **Python** | 3.8+ | [python.org](https://www.python.org/downloads/) |
+| **Git** | 2.0+ | [git-scm.com](https://git-scm.com/downloads) |
+| **Pip** | (inclus avec Python) | - |
 
 ---
-*Mnémosyne est, dans la mythologie grecque, la déesse de la mémoire et mère des Muses.*
+
+### 1️⃣ Cloner le dépôt
+
+```bash
+# Cloner le projet depuis GitHub
+git clone https://github.com/Solene0971/Mnemosyne.git
+
+# Se déplacer dans le dossier du projet
+cd Mnemosyne
