@@ -39,15 +39,14 @@
         </form>
 
         <form id="form-sync" action="{{ url_for('admin.synchronisation') }}" method="POST" style="display: inline-block;">
-            <button type="submit" class="btn-sync">import avec ScoDoc</button>
+            <button type="submit" class="btn-sync">Synchroniser avec ScoDoc</button>
         </form>
 
-        <div id="sync-status" class="msg-box msg-info" style="display:none; margin-top: 10px;">
-            Synchronisation en cours… Allez prendre un café, c'est moi qui régale.
-        </div>
+        <div id="sync-status" class="msg-box msg-info" style="display:none; margin-top: 10px;"></div>
+        <div id="sync-error" class="msg-box msg-error" style="display:none; margin-top: 10px;"></div>
 
         {% if msg_db %} <div class="msg-box msg-info">{{ msg_db }}</div> {% endif %}
-        {% if msg_import %} <div class="msg-box msg-success">{{ msg_import }}</div> {% endif %}
+        {% if msg_err_import %} <div class="msg-box msg-error">{{ msg_err_import }}</div> {% endif %}
 
         {% if stats %}
         <div class="stats-box">
@@ -402,14 +401,66 @@
         });
 
         document.getElementById('form-sync').addEventListener('submit', function(event) {
+            event.preventDefault();
             const choix = confirm("Lancer la synchronisation ?");
             if (!choix) {
-                event.preventDefault();
                 return;
             }
-            document.getElementById('sync-status').style.display = 'block';
-            document.querySelector('#form-sync button[type="submit"]').disabled = true;
-            document.querySelector('#form-init button[type="submit"]').disabled = true;
+
+            const syncStatus = document.getElementById('sync-status');
+            const syncButton = document.querySelector('#form-sync button[type="submit"]');
+            const initButton = document.querySelector('#form-init button[type="submit"]');
+
+            function showStatus(message) {
+                syncStatus.textContent = message;
+                syncStatus.className = 'msg-box msg-info';
+                syncStatus.style.display = 'block';
+            }
+
+            function hideStatus(delay = 1000) {
+                setTimeout(() => {
+                    syncStatus.style.display = 'none';
+                }, delay);
+            }
+
+            showStatus("Synchronisation avec ScoDoc en cours… Allez prendre un café, c'est moi qui régale.");
+            syncButton.disabled = true;
+            initButton.disabled = true;
+
+            fetch('{{ url_for('admin.synchronisation') }}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(new FormData(event.target)).toString()
+            })
+            .then(response => response.json())
+            .then(data => {
+                const errorElement = document.getElementById('sync-error');
+                if (data.error) {
+                    errorElement.textContent = "Erreur lors de la synchronisation : " + data.error;
+                    errorElement.style.display = 'block';
+                    syncStatus.style.display = 'none';
+                    errorElement.className = 'msg-box msg-error';
+                } else {
+                    errorElement.style.display = 'none';
+                    showStatus("Synchronisation terminée.");
+                    hideStatus(1500);
+                }
+            })
+            .catch(error => {
+                const errorElement = document.getElementById('sync-error');
+                errorElement.textContent = "Erreur lors de la synchronisation : " + error;
+                errorElement.style.display = 'block';
+                syncStatus.style.display = 'none';
+                errorElement.className = 'msg-box msg-error';
+            })
+            .finally(() => {
+                syncButton.disabled = false;
+                initButton.disabled = false;
+            });
         });
 
         document.querySelector(`form[action="{{ url_for('admin.ajouteUser') }}"]`).addEventListener('submit', function(event) {

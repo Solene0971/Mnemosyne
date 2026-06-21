@@ -7,12 +7,15 @@ from datetime import datetime
 
 class ScoDocService:
     def __init__(self):
-        self.dao = DonneeDAO()
-        # Configuration de l'url vers ScoDoc
-        url = os.getenv('SCODOC_API_URL', 'https://scodoc.univ-paris13.fr/ScoDoc/api')
-        #Récupération de la connection vers l'API
-        self.api = ScoDocAPI(url)
-
+        try:
+            self.dao = DonneeDAO()
+            # Configuration de l'url vers ScoDoc
+            url = os.getenv('SCODOC_API_URL')            #Récupération de la connection vers l'API
+            self.api = ScoDocAPI(url)
+        except Exception as e:
+            print(f"Erreur initialisation du service ScoDoc: {e}")
+            raise e
+       
     def run_synchronisation(self):
         """Orchestre la synchronisation complète"""
         stats = { 'departements': 0, 'formations': 0, 'etudiants': 0, 
@@ -22,6 +25,10 @@ class ScoDocService:
         cursor = db.cursor()
 
         try:
+            # 0. Vérification de l'initialisation de la BDD
+            if not self.dao.check_db_initialized():
+                raise ValueError("Erreur: Veuillez initialiser la base de données.")
+
             # 1. Données de bases à insérer manuellement
             self._init_referentiels_statiques(cursor)
 
@@ -109,7 +116,7 @@ class ScoDocService:
 
         except Exception as e:
             db.rollback()
-            current_app.logger.error(f"Erreur fatale synchro: {e}")
+            print(f"Erreur fatale synchro: {e}")
             raise e
 
 

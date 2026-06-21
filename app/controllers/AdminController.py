@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from app.services.ScoDocService import ScoDocService
 from app.services.DonneeService import DonneeService
 from app.tools import reqlogged
@@ -41,18 +41,23 @@ def initialisation():
 @reqlogged
 def synchronisation():
     """Lance la synchronisation JSON (Action du formulaire 2)"""
-    service = ScoDocService()
     stats = None
-    msg_import = None
+    msg_err_import = None
 
     try:
+        service = ScoDocService()
         stats = service.run_synchronisation()
-        msg_import = "Données importées avec succès."
     except Exception as e:
-        msg_import = f"Erreur Import : {e}"
-    
+        msg_err_import = f"{e}"
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept') == 'application/json':
+        return jsonify({
+            'stats': stats,
+            'error': msg_err_import,
+        })
+
     r = rs.get_regles()
-    return render_template('admin.html', msg_import=msg_import, stats=stats, rules=r)
+    return render_template('admin.html', msg_err_import=msg_err_import, stats=stats, rules=r)
 
 @admin_bp.route('/admin/addregle', methods=['POST'])
 @reqlogged

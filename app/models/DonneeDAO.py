@@ -102,6 +102,20 @@ class DonneeDAO:
         except:
             return False
 
+    def check_db_initialized(self):
+        db = self.get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='departement'")
+            table_exists = cursor.fetchone() is not None
+            if not table_exists:
+                return False
+            return True
+
+        except Exception as e:
+            print(f"Erreur lors de la vérification de l'initialisation de la BDD: {e}")
+            return False
+
     def _init_db(self):
         db = self.get_db()
         with current_app.open_resource('schema.sql', mode='r') as f:
