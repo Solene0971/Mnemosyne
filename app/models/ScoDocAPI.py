@@ -39,19 +39,24 @@ class ScoDocAPI:
             response = requests.post(auth_url, auth=(identifiant, mdp), timeout=10)
             response.raise_for_status()
             data = response.json()
-            
-            token = data.get('token')
-            
-            if not token:
-                raise Exception("Pas de token dans la réponse")
-                
-            return token
 
-        except Exception as e:
-            err_msg = f"ERREUR AUTHENTIFICATION SCODOC ({auth_url}) : {e}"
-            print(err_msg)
-            return ""
-        
+        except requests.HTTPError as e:
+            raise Exception(
+                f"Erreur HTTP lors de la récupération du token ScoDoc: {response.status_code}") from e
+        except requests.RequestException as e:
+            raise Exception(
+                f"Impossible de s'authentifier auprès de ScoDoc:\n{e}") from e
+        except ValueError as e:
+            raise Exception(
+                f"Réponse invalide de ScoDoc. Vérifiez que l'API renvoie du JSON valide.") from e
+
+        token = data.get('token')
+        if not token:
+            raise Exception(
+                f"Impossible de récupérer le token depuis ScoDoc. Vérifiez vos identifiants.")
+
+        return token
+
     def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Optional[Dict]:
         """Effectue une requête GET générique"""
         url = f"{self.base_url}{endpoint}"
@@ -59,11 +64,16 @@ class ScoDocAPI:
             response = self.session.get(url, params=params, timeout=60)
             response.raise_for_status()
             return response.json()
-
-        except Exception as e:
-            err_msg = f"Erreur requête API {url}: {e}"
-            print(err_msg)
-            return None
+        except requests.RequestException as e:
+            raise Exception(
+                f"Impossible de contacter ScoDoc pour {endpoint}. "
+                "Vérifiez la connexion réseau et le statut de l'API."
+            ) from e
+        except ValueError as e:
+            raise Exception(
+                f"Réponse invalide de ScoDoc pour {endpoint}. "
+                "Vérifiez que l'API renvoie du JSON valide."
+            ) from e
 
     # --- DONNÉES STRUCTURELLES ---
 

@@ -68,8 +68,6 @@ def create_admin_db():
             print(f"Erreur lors de la création de l'admin : {e}")
             connection.close()
             return False
-    else:
-        print(f"Utilisateur admin '{admin_username}' existe déjà.")
 
     connection.close()
     return True
