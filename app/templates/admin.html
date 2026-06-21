@@ -48,18 +48,20 @@
         {% if msg_db %} <div class="msg-box msg-info">{{ msg_db }}</div> {% endif %}
         {% if msg_err_import %} <div class="msg-box msg-error">{{ msg_err_import }}</div> {% endif %}
 
-        {% if stats %}
-        <div class="stats-box">
-            <h4>📊 Bilan de la synchronisation ScoDoc</h4>
-            <ul>
-                <li>Départements traités : <strong>{{ stats.departements }}</strong></li>
-                <li>Formations importées : <strong>{{ stats.formations }}</strong></li>
-                <li>Étudiants mis à jour : <strong>{{ stats.etudiants }}</strong></li>
-                <li>Inscriptions (Années) : <strong>{{ stats.inscriptions }}</strong></li>
-                <li>Evaluations (Notes) : <strong>{{ stats.evaluations }}</strong></li>
-            </ul>
+        <div id="stats-container">
+            {% if stats %}
+            <div class="stats-box">
+                <h4>📊 Bilan de la synchronisation ScoDoc</h4>
+                <ul>
+                    <li>Départements traités : <strong>{{ stats.departements }}</strong></li>
+                    <li>Formations importées : <strong>{{ stats.formations }}</strong></li>
+                    <li>Étudiants mis à jour : <strong>{{ stats.etudiants }}</strong></li>
+                    <li>Inscriptions (Années) : <strong>{{ stats.inscriptions }}</strong></li>
+                    <li>Evaluations (Notes) : <strong>{{ stats.evaluations }}</strong></li>
+                </ul>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
 
         <h2 class="section-title">Gestion des règles d’analyse</h2>
         <hr class="divider">
@@ -423,6 +425,25 @@
                 }, delay);
             }
 
+            function renderStats(stats) {
+                const container = document.getElementById('stats-container');
+                if (!stats) {
+                    container.innerHTML = '';
+                    return;
+                }
+                container.innerHTML = `
+                <div class="stats-box">
+                    <h4>📊 Bilan de la synchronisation ScoDoc</h4>
+                    <ul>
+                        <li>Départements traités : <strong>${stats.departements ?? 0}</strong></li>
+                        <li>Formations importées : <strong>${stats.formations ?? 0}</strong></li>
+                        <li>Étudiants mis à jour : <strong>${stats.etudiants ?? 0}</strong></li>
+                        <li>Inscriptions (Années) : <strong>${stats.inscriptions ?? 0}</strong></li>
+                        <li>Evaluations (Notes) : <strong>${stats.evaluations ?? 0}</strong></li>
+                    </ul>
+                </div>`;
+            }
+
             showStatus("Synchronisation avec ScoDoc en cours… Allez prendre un café, c'est moi qui régale.");
             syncButton.disabled = true;
             initButton.disabled = true;
@@ -443,9 +464,11 @@
                     errorElement.textContent = "Erreur lors de la synchronisation : " + data.error;
                     errorElement.style.display = 'block';
                     syncStatus.style.display = 'none';
+                    renderStats(null);
                     errorElement.className = 'msg-box msg-error';
                 } else {
                     errorElement.style.display = 'none';
+                    if (data.stats) renderStats(data.stats);
                     showStatus("Synchronisation terminée.");
                     hideStatus(1500);
                 }
@@ -455,6 +478,7 @@
                 errorElement.textContent = "Erreur lors de la synchronisation : " + error;
                 errorElement.style.display = 'block';
                 syncStatus.style.display = 'none';
+                renderStats(null);
                 errorElement.className = 'msg-box msg-error';
             })
             .finally(() => {
