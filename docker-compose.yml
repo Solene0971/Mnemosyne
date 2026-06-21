@@ -1,11 +1,11 @@
-version: '3.8'
-
 services:
   web:
     build: .
     container_name: mnemosyne_app
     ports:
       - "5000:5000"
+    env_file: 
+      - .env
     volumes:
       # on relie le dossier instance local au dossier instance du conteneur, ça permet de sauvegarder la base de données (scolarite.db) sur le PC
       - ./app/instance:/app/app/instance
