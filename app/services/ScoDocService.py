@@ -25,41 +25,61 @@ class ScoDocService:
         cursor = db.cursor()
 
         try:
+            print("Début de run_synchronisation()")
             # 0. Vérification de l'initialisation de la BDD
             if not self.dao.check_db_initialized():
                 raise ValueError("Erreur: Veuillez initialiser la base de données.")
+            print("BDD initialisée correctement.")
 
             # 1. Données de bases à insérer manuellement
             self._init_referentiels_statiques(cursor)
+            print("Référentiels statiques initialisés.")
 
             # 2. Insertion des départements (avec les passerelles ici)
+            print("Appel API: get_departements()")
             depts = self.api.get_departements()
+            print(f"Départements reçus: type={type(depts).__name__}, count={len(depts) if isinstance(depts, list) else 'N/A'}")
             self._import_departements(cursor, depts, stats)
+            print(f"Import des départements terminé, stats departements={stats['departements']}")
 
             # 3. Formations BUT et Parcours
+            print("Appel API: get_formations()")
             all_formations = self.api.get_formations()
+            print(f"Formations reçues: type={type(all_formations).__name__}, count={len(all_formations) if isinstance(all_formations, list) else 'N/A'}")
             
             # fait le lien entre les id de formations ScoDoc vers les id de departements dans la bdd
-            scodoc_formation_ids = {} 
+            scodoc_formation_ids = {}
 
-            for fmt in all_formations:
+            for idx, fmt in enumerate(all_formations, start=1):
+                print(f"    Traitement formation #{idx}")
+                if not isinstance(fmt, dict):
+                    print(f"Ignoré: formation inattendue de type {type(fmt).__name__}")
+                    continue
                 # Filtre : On ne traite que les BUT ou BACHELOR
                 titre = (fmt.get('titre') or fmt.get('titre_officiel') or '').upper()
+                print(f"  titre: {titre}")
                 acronyme = (fmt.get('acronym') or '')
+                print(f"  acronyme: {acronyme}")
                 archived = (fmt.get('archived'))
+                print(f"  archived: {archived}")
 
                 if (archived == False) and ('BUT' in titre or 'BACH' in acronyme):
                     # A. Création des formations théoriques (BUT1/2/3 x FI/FA) pour ce departement /!\ pas de vérification s'il n'y a pas de FA en BUT1
                     dept_id_bdd = self._import_structure_formation(cursor, fmt, stats) #retourne l'id bdd du departement
-                    
+                    print(f"  dept_id_bdd={dept_id_bdd}")
                     if dept_id_bdd:
                         scodoc_id = fmt.get('id') #l'ID ScoDoc de la formation
-                        #lien entre l'id ScoDoc de la formation et l'id du departement
+                        print(f"  ajout mapping formation {scodoc_id} -> dept {dept_id_bdd}")
+                        #lien entre l'id ScoDoc de la formation vers l'id du departement
                         scodoc_formation_ids[scodoc_id] = dept_id_bdd
+                else:
+                    print(f"Formation ignorée (non BUT/Bachelor ou archivée)")
 
             # Insertion manuelle des passerelles
+            print("Création des passerelles")
             self._create_passerelle_formation(cursor, 9, stats)
             self._create_passerelle_formation(cursor, 10, stats)
+            print("Insertion des passerelles terminée")
 
 
             # 4. Import parcours et compétences associées

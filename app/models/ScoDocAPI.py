@@ -79,12 +79,24 @@ class ScoDocAPI:
 
     def get_departements(self) -> List[Dict]:
         res = self._make_request("/departements")
-        return res.get('departements', []) if res else []
+        if isinstance(res, list):
+            print("departement récupéré sous forme de liste")
+            return res
+        if isinstance(res, dict):
+            print("departement récupéré sous forme de dictionnaire")
+            return res.get('departements', [])
+        return []
 
     def get_formations(self) -> List[Dict]:
         """Récupère toutes les formations"""
         res = self._make_request("/formations")
-        return res.get('formations', []) if res else []
+        if isinstance(res, list):
+            print("formation récupéré sous forme de liste")
+            return res
+        if isinstance(res, dict):
+            print("formation récupéré sous forme de dictionnaire")
+            return res.get('formations', [])
+        return []
 
     def get_referentiel_competences(self, formation_id: int) -> Optional[Dict]:
         """

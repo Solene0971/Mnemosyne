@@ -45,8 +45,8 @@ def synchronisation():
     msg_err_import = None
 
     try:
-        service = ScoDocService()
-        stats = service.run_synchronisation()
+        service = ScoDocService() # fonctinne parfaitement
+        stats = service.run_synchronisation() #bug
     except Exception as e:
         msg_err_import = f"{e}"
 
