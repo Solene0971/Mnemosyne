@@ -1,6 +1,5 @@
 import requests
 from typing import Dict, List, Optional, Tuple
-from flask import current_app
 import os
 
 class ScoDocAPI:
@@ -80,10 +79,8 @@ class ScoDocAPI:
     def get_departements(self) -> List[Dict]:
         res = self._make_request("/departements")
         if isinstance(res, list):
-            print("departement récupéré sous forme de liste")
             return res
         if isinstance(res, dict):
-            print("departement récupéré sous forme de dictionnaire")
             return res.get('departements', [])
         return []
 
@@ -91,10 +88,8 @@ class ScoDocAPI:
         """Récupère toutes les formations"""
         res = self._make_request("/formations")
         if isinstance(res, list):
-            print("formation récupéré sous forme de liste")
             return res
         if isinstance(res, dict):
-            print("formation récupéré sous forme de dictionnaire")
             return res.get('formations', [])
         return []
 

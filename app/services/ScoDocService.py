@@ -4,6 +4,8 @@ from flask import current_app
 import os
 import math
 from datetime import datetime
+from pathlib import Path
+import time
 
 class ScoDocService:
     def __init__(self):
@@ -12,9 +14,14 @@ class ScoDocService:
             # Configuration de l'url vers ScoDoc
             url = os.getenv('SCODOC_API_URL')            #Récupération de la connection vers l'API
             self.api = ScoDocAPI(url)
+            self.log_path = Path(os.getenv('SCODOC_API_LOG_PATH', './scodoc_service.log'))
+            self.log_path.parent.mkdir(parents=True, exist_ok=True)
         except Exception as e:
-            print(f"Erreur initialisation du service ScoDoc: {e}")
             raise e
+
+    def _log(self, message):
+        with self.log_path.open('a', encoding='utf-8') as f:
+            f.write(f"[{datetime.now().isoformat(sep=' ', timespec='seconds')}] {message}\n")
        
     def run_synchronisation(self):
         """Orchestre la synchronisation complète"""
@@ -23,76 +30,59 @@ class ScoDocService:
         
         db = self.dao.get_db()
         cursor = db.cursor()
+        self._log("Démarrage de la synchronisation ScoDoc")
 
         try:
-            print("Début de run_synchronisation()")
             # 0. Vérification de l'initialisation de la BDD
             if not self.dao.check_db_initialized():
                 raise ValueError("Erreur: Veuillez initialiser la base de données.")
-            print("BDD initialisée correctement.")
 
             # 1. Données de bases à insérer manuellement
             self._init_referentiels_statiques(cursor)
-            print("Référentiels statiques initialisés.")
 
             # 2. Insertion des départements (avec les passerelles ici)
-            print("Appel API: get_departements()")
             depts = self.api.get_departements()
-            print(f"Départements reçus: type={type(depts).__name__}, count={len(depts) if isinstance(depts, list) else 'N/A'}")
             self._import_departements(cursor, depts, stats)
-            print(f"Import des départements terminé, stats departements={stats['departements']}")
+            self._log(f"Départements importés: {stats['departements']}")
 
             # 3. Formations BUT et Parcours
-            print("Appel API: get_formations()")
             all_formations = self.api.get_formations()
-            print(f"Formations reçues: type={type(all_formations).__name__}, count={len(all_formations) if isinstance(all_formations, list) else 'N/A'}")
             
             # fait le lien entre les id de formations ScoDoc vers les id de departements dans la bdd
             scodoc_formation_ids = {}
 
             for idx, fmt in enumerate(all_formations, start=1):
-                print(f"    Traitement formation #{idx}")
                 if not isinstance(fmt, dict):
-                    print(f"Ignoré: formation inattendue de type {type(fmt).__name__}")
                     continue
                 # Filtre : On ne traite que les BUT ou BACHELOR
                 titre = (fmt.get('titre') or fmt.get('titre_officiel') or '').upper()
-                print(f"  titre: {titre}")
                 acronyme = (fmt.get('acronym') or '')
-                print(f"  acronyme: {acronyme}")
                 archived = (fmt.get('archived'))
-                print(f"  archived: {archived}")
 
                 if (archived == False) and ('BUT' in titre or 'BACH' in acronyme):
-                    # A. Création des formations théoriques (BUT1/2/3 x FI/FA) pour ce departement /!\ pas de vérification s'il n'y a pas de FA en BUT1
+                    # A. Création des formations théoriques (BUT1/2/3 x FI/FA) pour ce departement /!\n                    dept_id_bdd = self._import_structure_formation(cursor, fmt, stats)
                     dept_id_bdd = self._import_structure_formation(cursor, fmt, stats) #retourne l'id bdd du departement
-                    print(f"  dept_id_bdd={dept_id_bdd}")
                     if dept_id_bdd:
-                        scodoc_id = fmt.get('id') #l'ID ScoDoc de la formation
-                        print(f"  ajout mapping formation {scodoc_id} -> dept {dept_id_bdd}")
-                        #lien entre l'id ScoDoc de la formation vers l'id du departement
+                        scodoc_id = fmt.get('id')
                         scodoc_formation_ids[scodoc_id] = dept_id_bdd
-                else:
-                    print(f"Formation ignorée (non BUT/Bachelor ou archivée)")
 
             # Insertion manuelle des passerelles
-            print("Création des passerelles")
             self._create_passerelle_formation(cursor, 9, stats)
             self._create_passerelle_formation(cursor, 10, stats)
-            print("Insertion des passerelles terminée")
 
 
             # 4. Import parcours et compétences associées
             #fait le lien entre les id (departement de la bdd, le num de l'UE) vers l'id competence de la bdd
             map_competence_ids = {} 
+            map_ue_parcours = {} #permet de faire le lien entre l'UE ScoDoc et le parcours de la bdd
             depts_traites = set() #permet de vérifier qu'on ne traite pas un department dejà vu (évite des insertions ignorées)
 
             #insère les compétences associée à la formation et son departement
             for scodoc_id, dept_id_bdd in scodoc_formation_ids.items():
-                #si on a pas encore traité les compétences du departement
                 if dept_id_bdd not in depts_traites:
-                    self._import_referentiel_competence(cursor, scodoc_id, dept_id_bdd, map_competence_ids, stats)
+                    self._import_referentiel_competence(cursor, scodoc_id, dept_id_bdd, map_competence_ids, map_ue_parcours, stats)
                     depts_traites.add(dept_id_bdd)
+            self._log(f"Compétences importées: {stats['competences']}")
 
             # 5. Insertion des inscriptions et des évaluations
             annee_actuelle = datetime.now().year
@@ -106,37 +96,40 @@ class ScoDocService:
             cache_dec = {row['acronyme']: row['id_decision'] for row in cursor.fetchall()}
 
             for annee in annees_a_traiter:
-                print(f"--- Synchronisation année {annee} ---")
                 formsemestres = self.api.get_formsemestres_query(annee)
                 
                 if not formsemestres: continue
 
                 for fs in formsemestres:
                     formation_id_scodoc = fs.get('formation_id')
-                    titre_semestre = fs.get('titre', '').upper()
-                    
+                    titre_semestre = (fs.get('titre') or '').upper()
+
                     # On traite si c'est une formation connue OU si c'est une Passerelle
                     is_known = formation_id_scodoc in scodoc_formation_ids
                     is_passerelle = 'PASSERELLE' in titre_semestre
 
                     if is_known or is_passerelle:
-                        
                         # Récupération des notes
+                        time.sleep(0.5)
                         decisions_jury = self.api.get_decisions_jury(fs.get('id'))
                         
                         self._import_resultats_semestre(
                             cursor, fs, decisions_jury, 
                             annee, cache_etus, cache_dec, 
-                            map_competence_ids, scodoc_formation_ids, stats
+                            map_competence_ids, map_ue_parcours, scodoc_formation_ids, stats
                         )
 
             db.commit()
-            print(f"Synchro terminée: {stats}")
+            self._log(
+                f"Synchronisation terminée: départements={stats['departements']} formations={stats['formations']} "
+                f"étudiants={stats['etudiants']} inscriptions={stats['inscriptions']} "
+                f"compétences={stats['competences']} évaluations={stats['evaluations']}"
+            )
             return stats
 
         except Exception as e:
             db.rollback()
-            print(f"Erreur fatale synchro: {e}")
+            self._log(f"Erreur de synchronisation: {e}")
             raise e
 
 
@@ -147,7 +140,8 @@ class ScoDocService:
     def _import_structure_formation(self, cursor, fmt, stats):
         """Génère les 6 formations (BUT1-3, FI/FA) pour le département"""
         dept_id_scodoc = fmt.get('dept_id') or fmt.get('departement', {}).get('id')
-        if not dept_id_scodoc: return None
+        if not dept_id_scodoc: 
+            return None
         
         nb_creations = 0
         for annee in [1, 2, 3]:
@@ -156,8 +150,9 @@ class ScoDocService:
                     INSERT OR IGNORE INTO formation (annee_but, id_departement, id_rythme)
                     VALUES (?, ?, ?)
                 """, (annee, dept_id_scodoc, rythme))
-                if cursor.rowcount > 0: nb_creations += 1
-        
+                if cursor.rowcount > 0:
+                    nb_creations += 1
+
         stats['formations'] += nb_creations
         return dept_id_scodoc
 
@@ -171,12 +166,13 @@ class ScoDocService:
         if cursor.rowcount > 0:
             stats['formations'] += 1
 
-    def _import_resultats_semestre(self, cursor, fs_info, decisions_json, annee, cache_etus, cache_dec, map_competence_ids, scodoc_formation_ids, stats):
+    def _import_resultats_semestre(self, cursor, fs_info, decisions_json, annee, cache_etus, cache_dec, map_competence_ids, map_ue_parcours, scodoc_formation_ids, stats):
         """Importe les résultats, gère le mapping Passerelle et les notes RCUES"""
-        
+
         # 1. Infos Semestre de base
         semestre_idx = fs_info.get('semestre_id')
-        if not semestre_idx: return 
+        if not semestre_idx:
+            return 
         annee_but = math.ceil(semestre_idx / 2) # S1/S2->1...
 
         modalite = fs_info.get('modalite', '').upper()
@@ -213,19 +209,21 @@ class ScoDocService:
 
         # 4. Traitement des étudiants et notes
         for etu in decisions_json:
-            ine = etu.get('code_ine')
-            if not ine: continue
+            ine = etu.get('code_ine') or etu.get('code_nip') or str(etu.get('etudid'))
+            if not ine:
+                continue
 
             # A. Etudiant
             if ine not in cache_etus:
                 cursor.execute("INSERT OR IGNORE INTO etudiant (ine) VALUES (?)", (ine,))
                 cursor.execute("SELECT id_etudiant FROM etudiant WHERE ine=?", (ine,))
                 rid = cursor.fetchone()
-                if rid: 
+                if rid:
                     cache_etus[ine] = rid[0]
-                    stats['etudiants'] += 1
-            
+
             id_etudiant = cache_etus.get(ine)
+            if id_etudiant:
+                stats['etudiants'] += 1
 
             # B. Inscription & Décision
             # Recherche de la décision dans l'ordre de priorité
@@ -235,8 +233,8 @@ class ScoDocService:
             elif etu.get('semestre') and isinstance(etu['semestre'], list) and etu['semestre']:
                 decision_info = etu['semestre'][0]
             elif etu.get('decision'): # Fallback ancienne API
-                 d = etu.get('decision')
-                 decision_info = d[0] if isinstance(d, list) and d else (d if isinstance(d, dict) else {})
+                d = etu.get('decision')
+                decision_info = d[0] if isinstance(d, list) and d else (d if isinstance(d, dict) else {})
 
             code_dec = decision_info.get('code')
             id_decision = cache_dec.get(code_dec)
@@ -258,34 +256,68 @@ class ScoDocService:
             cursor.execute("SELECT id_inscription FROM inscription WHERE id_etudiant=? AND annee_universitaire=?",
                            (id_etudiant, annee))
             row_ins = cursor.fetchone()
-            if not row_ins: continue
+            if not row_ins:
+                continue
             id_inscription = row_ins[0]
             stats['inscriptions'] += 1
 
             # C. Notes (Evaluations via rcues)
-            rcues = etu.get('rcues', [])
+            rcues = etu.get('rcues') or []
+
+            parcours_possibles = None
             
+            for comp_data in rcues:
+                for key, val in comp_data.items():
+                    if key.startswith('ue_') and isinstance(val, dict):
+                        ue_id = val.get('ue_id')
+                        if ue_id and ue_id in map_ue_parcours:
+                            # Les parcours qui contiennent cette UE
+                            p_for_ue = set(map_ue_parcours[ue_id])
+                            if p_for_ue:
+                                if parcours_possibles is None:
+                                    parcours_possibles = p_for_ue
+                                else:
+                                    # Intersection des ensembles
+                                    parcours_possibles = parcours_possibles.intersection(p_for_ue)
+            
+            # Si on a trouvé un (ou des) parcours, on prend le premier restant
+            id_parcours_etudiant = list(parcours_possibles)[0] if parcours_possibles else None
+               
+
+            # --- Insertion des notes ---
             for index, comp_data in enumerate(rcues):
                 # Mapping : Index 0 -> Compétence 1
                 numero_competence = index + 1
+                id_comp_bdd = None
+
+                # On a déduit le parcours exact de l'étudiant
+                if id_parcours_etudiant:
+                    id_comp_bdd = map_competence_ids.get((dept_id_bdd, id_parcours_etudiant, numero_competence))
                 
-                # On retrouve l'ID BDD de la compétence
-                id_comp_bdd = map_competence_ids.get((dept_id_bdd, numero_competence))
+                
+                # On retrouve l'ID BDD de la compétence (en cherchant dans tous les parcours du dept)
+                if not id_comp_bdd:
+                    for key in map_competence_ids:
+                        if key[0] == dept_id_bdd and key[2] == numero_competence:
+                            id_comp_bdd = map_competence_ids[key]
+                            break
                 
                 # Note: Si c'est une passerelle, il n'y a peut-être pas de compétence importée automatiquement.
                 # Dans ce cas, id_comp_bdd sera None et on ne stocke pas de note (logique, car pas de ref).
-                if not id_comp_bdd: continue
+                if not id_comp_bdd:
+                    continue
 
                 moyenne = comp_data.get('moy')
                 code_str = comp_data.get('code')
                 id_d_comp = cache_dec.get(code_str)
 
-                if moyenne is not None:
-                    cursor.execute("""
-                        INSERT OR REPLACE INTO evaluer (id_inscription, id_competence, id_decision, moyenne)
-                        VALUES (?, ?, ?, ?)
-                    """, (id_inscription, id_comp_bdd, id_d_comp, moyenne))
-                    stats['evaluations'] += 1
+                if moyenne is None:
+                    continue
+                cursor.execute("""
+                    INSERT OR REPLACE INTO evaluer (id_inscription, id_competence, id_decision, moyenne)
+                    VALUES (?, ?, ?, ?)
+                """, (id_inscription, id_comp_bdd, id_d_comp, moyenne))
+                stats['evaluations'] += 1
 
     def _import_departements(self, cursor, depts_api, stats):
         donnees = []
@@ -305,14 +337,16 @@ class ScoDocService:
             cursor.executemany("INSERT OR REPLACE INTO departement (id_departement, nom, acronyme) VALUES (?, ?, ?)", donnees)
             stats['departements'] += cursor.rowcount
 
-    def _import_referentiel_competence(self, cursor, scodoc_id, dept_id_bdd, map_competence_ids, stats):
+    def _import_referentiel_competence(self, cursor, scodoc_id, dept_id_bdd, map_competence_ids, map_ue_parcours, stats):
         """Importe Parcours et Compétences"""
         ref = self.api.get_referentiel_competences(scodoc_id)
-        if not ref or not isinstance(ref, dict): return
+        if not ref or not isinstance(ref, dict):
+            return
 
         # 1. Parcours
         dict_parcours = ref.get('parcours')
-        if not dict_parcours or not isinstance(dict_parcours, dict): return
+        if not dict_parcours or not isinstance(dict_parcours, dict):
+            return
 
         map_parcours_bdd = {} 
 
@@ -330,16 +364,39 @@ class ScoDocService:
                                (p_code, nom_parcours, dept_id_bdd))
                 map_parcours_bdd[p_code] = cursor.lastrowid
 
-        if not map_parcours_bdd: return
+        if not map_parcours_bdd:
+            return
 
-        # 2. Compétences
+        # 2. UE
+        dict_ues = ref.get('ues')
+        if dict_ues and isinstance(dict_ues, dict):
+            for ue_key, data_ue in dict_ues.items():
+                # L'ID ScoDoc de l'UE
+                ue_id_scodoc = data_ue.get('id')
+                if not ue_id_scodoc:
+                    try: ue_id_scodoc = int(ue_key)
+                    except ValueError: continue
+                
+                # Liste des codes parcours auxquels cette UE appartient
+                parcours_de_lue = data_ue.get('parcours', [])
+                
+                if ue_id_scodoc not in map_ue_parcours:
+                    map_ue_parcours[ue_id_scodoc] = []
+
+                for p_code in parcours_de_lue:
+                    if p_code in map_parcours_bdd:
+                        map_ue_parcours[ue_id_scodoc].append(map_parcours_bdd[p_code])
+
+        # 3. Compétences
         dict_competences = ref.get('competences')
-        if not dict_competences or not isinstance(dict_competences, dict): return
+        if not dict_competences or not isinstance(dict_competences, dict):
+            return
 
         for key_comp, data_comp in dict_competences.items():
             titre_comp = data_comp.get('titre') or key_comp
             numero = data_comp.get('numero')
-            if not numero: continue
+            if not numero: 
+                continue
 
             # Acronyme stable : C1, C2...
             acronyme_comp = f"C{numero}" 
@@ -357,7 +414,7 @@ class ScoDocService:
                     final_id_comp = cursor.lastrowid
                     stats['competences'] += 1
 
-                map_competence_ids[(dept_id_bdd, numero)] = final_id_comp
+                map_competence_ids[(dept_id_bdd, id_parcours_bdd, numero)] = final_id_comp
 
     def _init_referentiels_statiques(self, cursor):
         codes = [

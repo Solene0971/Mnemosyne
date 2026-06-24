@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
+import threading
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, current_app
 from app.services.ScoDocService import ScoDocService
 from app.services.DonneeService import DonneeService
 from app.tools import reqlogged
@@ -40,7 +41,25 @@ def initialisation():
 @admin_bp.route('/admin/sync', methods=['POST'])
 @reqlogged
 def synchronisation():
-    """Lance la synchronisation JSON (Action du formulaire 2)"""
+    """Lance la synchronisation JSON (Action du formulaire 2) dans un thread"""
+    global ETAT_SYNCHRO
+
+    if ETAT_SYNCHRO["en_cours"]:
+        return jsonify({"status": "already_running"}), 200
+
+    ETAT_SYNCHRO = {"en_cours": True, "stats": None, "erreur": None}
+
+    app = current_app._get_current_object()
+    thread = threading.Thread(target=executer_synchro_background, args=(app,))
+    thread.start()
+
+    return jsonify({"status": "started"}), 200
+
+    return jsonify({
+        "status": "success", 
+        "message": "La synchronisation a démarré en arrière-plan. Vous pouvez continuer à utiliser l'application."
+    }), 202
+
     stats = None
     msg_err_import = None
 
@@ -57,7 +76,15 @@ def synchronisation():
         })
 
     r = rs.get_regles()
-    return render_template('admin.html', msg_err_import=msg_err_import, stats=stats, rules=r)
+    return render_template('admin.html', msg_err_import=msg_err_import, rules=r)
+
+
+@admin_bp.route('/admin/sync/status', methods=['GET'])
+@reqlogged
+def get_sync_status():
+    """Permet à l'AJAX de vérifier où en est la synchronisation"""
+    return jsonify(ETAT_SYNCHRO)
+
 
 @admin_bp.route('/admin/addregle', methods=['POST'])
 @reqlogged
@@ -118,3 +145,25 @@ def update_statut():
     rs.modifier_statut(index, statut)
 
     return redirect(url_for('admin.admin_dashboard'))
+
+
+ETAT_SYNCHRO = {
+    "en_cours": False,
+    "stats": None,
+    "erreur": None
+}
+
+def executer_synchro_background(app):
+    """Exécute la synchronisation dans un thread séparé avec accès à la BDD"""
+    global ETAT_SYNCHRO
+    with app.app_context():
+        try:
+            # On instancie le service ICI pour qu'il récupère sa propre connexion SQLite via 'g'
+            scodoc_service = ScoDocService()
+            stats = scodoc_service.run_synchronisation()
+            ETAT_SYNCHRO["stats"] = stats
+            ETAT_SYNCHRO["en_cours"] = False
+        except Exception as e:
+            # On met à jour l'état avec l'erreur
+            ETAT_SYNCHRO["erreur"] = str(e)
+            ETAT_SYNCHRO["en_cours"] = False
