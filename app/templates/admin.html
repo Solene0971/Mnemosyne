@@ -49,18 +49,6 @@
         {% if msg_err_import %} <div class="msg-box msg-error">{{ msg_err_import }}</div> {% endif %}
 
         <div id="stats-container">
-            {% if stats %}
-            <div class="stats-box">
-                <h4>📊 Bilan de la synchronisation ScoDoc</h4>
-                <ul>
-                    <li>Départements traités : <strong>{{ stats.departements }}</strong></li>
-                    <li>Formations importées : <strong>{{ stats.formations }}</strong></li>
-                    <li>Étudiants mis à jour : <strong>{{ stats.etudiants }}</strong></li>
-                    <li>Inscriptions (Années) : <strong>{{ stats.inscriptions }}</strong></li>
-                    <li>Evaluations (Notes) : <strong>{{ stats.evaluations }}</strong></li>
-                </ul>
-            </div>
-            {% endif %}
         </div>
 
         <h2 class="section-title">Gestion des règles d’analyse</h2>
@@ -410,14 +398,9 @@
             }
 
             const syncStatus = document.getElementById('sync-status');
+            const errorElement = document.getElementById('sync-error');
             const syncButton = document.querySelector('#form-sync button[type="submit"]');
             const initButton = document.querySelector('#form-init button[type="submit"]');
-
-            function showStatus(message) {
-                syncStatus.textContent = message;
-                syncStatus.className = 'msg-box msg-info';
-                syncStatus.style.display = 'block';
-            }
 
             function hideStatus(delay = 1000) {
                 setTimeout(() => {
@@ -444,47 +427,60 @@
                 </div>`;
             }
 
-            showStatus("Synchronisation avec ScoDoc en cours… Allez prendre un café, c'est moi qui régale.");
+            syncStatus.textContent = "Synchronisation avec ScoDoc en cours… Allez prendre un café, c'est moi qui régale.";
+            syncStatus.className = 'msg-box msg-info';
+            syncStatus.style.display = 'block';
             syncButton.disabled = true;
             initButton.disabled = true;
+            errorElement.style.display = 'none';
+            renderStats(null);
 
             fetch('{{ url_for('admin.synchronisation') }}', {
                 method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams(new FormData(event.target)).toString()
             })
             .then(response => response.json())
             .then(data => {
-                const errorElement = document.getElementById('sync-error');
-                if (data.error) {
-                    errorElement.textContent = "Erreur lors de la synchronisation : " + data.error;
-                    errorElement.style.display = 'block';
-                    syncStatus.style.display = 'none';
-                    renderStats(null);
-                    errorElement.className = 'msg-box msg-error';
-                } else {
-                    errorElement.style.display = 'none';
-                    if (data.stats) renderStats(data.stats);
-                    showStatus("Synchronisation terminée.");
-                    hideStatus(1500);
-                }
+                verifierEtatSynchro();
             })
             .catch(error => {
-                const errorElement = document.getElementById('sync-error');
                 errorElement.textContent = "Erreur lors de la synchronisation : " + error;
                 errorElement.style.display = 'block';
                 syncStatus.style.display = 'none';
                 renderStats(null);
                 errorElement.className = 'msg-box msg-error';
-            })
-            .finally(() => {
                 syncButton.disabled = false;
                 initButton.disabled = false;
             });
+
+            function verifierEtatSynchro() {
+                fetch("{{ url_for('admin.get_sync_status') }}")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.en_cours) {
+                        setTimeout(verifierEtatSynchro, 2000);
+                    } else if (data.erreur) {
+                        errorElement.textContent = "Erreur lors de la synchronisation : " + data.erreur;
+                        errorElement.style.display = 'block';
+                        syncStatus.style.display = 'none';
+                        syncButton.disabled = false;
+                        initButton.disabled = false;
+                    } else {
+                        syncStatus.style.display = 'none';
+                        renderStats(data.stats);
+                        
+                        errorElement.textContent = "Synchronisation terminée avec succès !";
+                        errorElement.className = 'msg-box msg-success'; 
+                        errorElement.style.display = 'block';
+                        
+                        syncButton.disabled = false;
+                        initButton.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error("Coupure réseau:", error);
+                    setTimeout(verifierEtatSynchro, 2000); 
+                });
+            }
         });
 
         document.querySelector(`form[action="{{ url_for('admin.ajouteUser') }}"]`).addEventListener('submit', function(event) {
@@ -494,10 +490,10 @@
         
         // On vérifie si c'est "admin"
         if (username === 'admin') {
-            event.preventDefault(); // 🛑 BLOQUE L'ENVOI ET LE RECHARGEMENT
+            event.preventDefault(); // BLOQUE L'ENVOI ET LE RECHARGEMENT
             
             // Affiche le message rouge en dessous du champ
-            errorMsg.innerText = "⚠️ Erreur : Le nom d'utilisateur 'admin' est interdit.";
+            errorMsg.innerText = "Erreur : Le nom d'utilisateur 'admin' est interdit.";
             errorMsg.style.display = 'block';
             
             // Optionnel : remet le curseur dans le champ pour que l'utilisateur corrige

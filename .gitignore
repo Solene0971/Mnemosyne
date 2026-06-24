@@ -1,4 +1,5 @@
 __pycache__/
+.pytest_cache/
 *.pyc
 .env
 .venv/
@@ -6,6 +7,7 @@ venv/
 *.db
 *.sqlite
 *.sqlite3
+instance/*.db
 instance/
 *.log
 .vscode/
